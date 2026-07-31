@@ -106,29 +106,32 @@ export function App() {
     >
       <AriaLiveRegion message={announcement} />
 
-      <header className="mb-8 flex w-full items-center justify-between">
+      <header className="mb-8 flex w-full items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => setView('setup')}
           aria-label="Go to setup"
-          className="-mx-2 -my-1 flex items-center gap-2 rounded-xl px-2 py-1 transition active:scale-95 active:bg-accent/20 active:text-round"
+          className="-mx-2 -my-1 flex min-w-0 items-center gap-2 rounded-xl px-2 py-1 transition active:scale-95 active:bg-accent/20 active:text-round"
         >
-          <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="h-8 w-8" />
-          <span className="text-lg font-bold tracking-widest">ROLLWAVE</span>
+          <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="h-8 w-8 shrink-0" />
+          <span className="truncate text-lg font-bold tracking-widest">ROLLWAVE</span>
           {stats.currentStreak > 0 && (
-            <span className="ml-1 text-sm text-white/50" title={`${stats.currentStreak}-day streak`}>
+            <span
+              className="ml-1 shrink-0 text-sm text-slate-900/50 dark:text-white/50"
+              title={`${stats.currentStreak}-day streak`}
+            >
               {stats.currentStreak}🔥
             </span>
           )}
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {showClock && <LiveClock />}
           {isSetup && (
             <button
               type="button"
               onClick={() => setView((v) => (v === 'history' ? 'setup' : 'history'))}
               aria-label={view === 'history' ? 'Back to timer setup' : 'View training history'}
-              className="rounded-full border border-white/15 p-2.5 text-lg text-white/70 transition hover:text-white active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round"
+              className="rounded-full border border-slate-900/15 p-2.5 text-lg text-slate-900/70 transition hover:text-slate-900 active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round dark:border-white/15 dark:text-white/70 dark:hover:text-white"
             >
               {view === 'history' ? '⏱️' : '📊'}
             </button>
@@ -158,7 +161,7 @@ export function App() {
             onReset={handleReset}
             onSkip={actions.skip}
           />
-          <label className="flex items-center gap-2 text-xs text-white/40">
+          <label className="flex items-center gap-2 text-xs text-slate-900/40 dark:text-white/40">
             <input
               type="checkbox"
               checked={showClock}

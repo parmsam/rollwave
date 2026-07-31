@@ -13,14 +13,14 @@ export function PhaseIndicator({ currentRound, totalRounds, phase, unlimited }: 
   if (unlimited) {
     return (
       <div className="flex flex-col items-center gap-2">
-        <p className="text-sm text-white/60">Round {currentRound} · unlimited</p>
+        <p className="text-sm text-slate-900/60 dark:text-white/60">Round {currentRound} · unlimited</p>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <p className="text-sm text-white/60">
+      <p className="text-sm text-slate-900/60 dark:text-white/60">
         {phase === 'finished' ? `${totalRounds} of ${totalRounds} rounds complete` : `Round ${currentRound} of ${totalRounds}`}
       </p>
       <div className="flex gap-1.5">
@@ -31,8 +31,8 @@ export function PhaseIndicator({ currentRound, totalRounds, phase, unlimited }: 
               round < currentRound || phase === 'finished'
                 ? 'bg-accent'
                 : round === currentRound
-                  ? 'bg-white'
-                  : 'bg-white/15'
+                  ? 'bg-slate-900 dark:bg-white'
+                  : 'bg-slate-900/15 dark:bg-white/15'
             }`}
           />
         ))}

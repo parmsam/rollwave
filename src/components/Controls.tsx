@@ -12,7 +12,7 @@ interface Props {
 const primaryButtonClass =
   'rounded-full bg-accent px-10 py-4 text-lg font-semibold text-ink shadow-[0_0_30px_-5px_var(--color-accent)] transition active:scale-95 active:bg-accent-2 active:shadow-[0_0_30px_-5px_var(--color-accent-2)]'
 const secondaryButtonClass =
-  'rounded-full border border-white/15 px-6 py-4 text-sm font-medium text-white/80 transition hover:border-white/30 active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round'
+  'rounded-full border border-slate-900/15 px-6 py-4 text-sm font-medium text-slate-900/80 transition hover:border-slate-900/30 active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round dark:border-white/15 dark:text-white/80 dark:hover:border-white/30'
 
 export function Controls({ phase, isPaused, onToggleStartPause, onReset, onSkip }: Props) {
   useKeyboardShortcuts({

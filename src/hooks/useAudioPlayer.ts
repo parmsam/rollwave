@@ -133,11 +133,35 @@ export function useAudioPlayer(muted: boolean) {
     }
   }, [muted])
 
+  // Short, bright single-note ding for "round about to start" — deliberately
+  // the opposite character of the deep, slow round-end bell (high pitch,
+  // quick decay) so the two are unmistakable by ear alone.
+  const playStartChime = useCallback(() => {
+    if (muted) return
+    const ctx = ctxRef.current
+    if (!ctx) return
+    const now = ctx.currentTime
+    const gain = ctx.createGain()
+    gain.connect(ctx.destination)
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.4, now + 0.008)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35)
+
+    for (const freq of [1046.5, 1568]) {
+      const osc = ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      osc.connect(gain)
+      osc.start(now)
+      osc.stop(now + 0.4)
+    }
+  }, [muted])
+
   useEffect(() => {
     return () => {
       void ctxRef.current?.close()
     }
   }, [])
 
-  return { unlock, playClip, playBell }
+  return { unlock, playClip, playBell, playStartChime }
 }

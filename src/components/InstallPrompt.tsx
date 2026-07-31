@@ -55,7 +55,7 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-panel/95 px-4 py-3 text-sm text-white/80 shadow-lg backdrop-blur-sm sm:inset-x-auto sm:right-4 sm:w-80">
+    <div className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-slate-900/10 bg-panel/95 px-4 py-3 text-sm text-slate-900/80 shadow-lg backdrop-blur-sm sm:inset-x-auto sm:right-4 sm:w-80 dark:border-white/10 dark:text-white/80">
       <span>
         {showIosHint
           ? 'Install ROLLWAVE: tap Share, then "Add to Home Screen".'
@@ -71,7 +71,12 @@ export function InstallPrompt() {
             Install
           </button>
         )}
-        <button type="button" onClick={dismiss} aria-label="Dismiss" className="text-white/50">
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className="text-slate-900/50 dark:text-white/50"
+        >
           ✕
         </button>
       </div>

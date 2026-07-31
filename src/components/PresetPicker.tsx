@@ -44,7 +44,7 @@ export function PresetPicker({
         <button
           type="button"
           onClick={onAddCustom}
-          className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-left text-white/60 transition hover:border-white/40 hover:text-white/80 active:scale-[0.98] active:border-accent/60 active:bg-accent/10 active:text-round sm:col-span-2"
+          className="rounded-2xl border border-dashed border-slate-900/20 px-4 py-3 text-left text-slate-900/60 transition hover:border-slate-900/40 hover:text-slate-900/80 active:scale-[0.98] active:border-accent/60 active:bg-accent/10 active:text-round sm:col-span-2 dark:border-white/20 dark:text-white/60 dark:hover:border-white/40 dark:hover:text-white/80"
         >
           + New custom mode
         </button>
@@ -61,19 +61,19 @@ export function PresetPicker({
               }
               maxLength={24}
               aria-label="Preset name"
-              className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-1.5 text-sm font-semibold text-round outline-none focus:border-accent-2"
+              className="flex-1 rounded-lg border border-slate-900/10 bg-slate-900/5 px-3 py-1.5 text-sm font-semibold text-round outline-none focus:border-accent-2 dark:border-white/10 dark:bg-black/20"
             />
             <button
               type="button"
               onClick={() => onDeleteCustom(selectedCustom.id)}
               aria-label="Delete this custom mode"
-              className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/50 transition hover:border-warn/50 hover:text-warn active:scale-95 active:border-warn/60 active:bg-warn/20 active:text-warn"
+              className="rounded-full border border-slate-900/10 px-3 py-1.5 text-xs text-slate-900/50 transition hover:border-warn/50 hover:text-warn active:scale-95 active:border-warn/60 active:bg-warn/20 active:text-warn dark:border-white/10 dark:text-white/50"
             >
               Delete
             </button>
           </div>
 
-          <label className="flex items-center justify-between py-1 text-sm text-white/70">
+          <label className="flex items-center justify-between py-1 text-sm text-slate-900/70 dark:text-white/70">
             <span>Unlimited rounds</span>
             <input
               type="checkbox"
@@ -85,7 +85,7 @@ export function PresetPicker({
             />
           </label>
 
-          <div className="divide-y divide-white/10">
+          <div className="divide-y divide-slate-900/10 dark:divide-white/10">
             {!selectedCustom.unlimited && (
               <Stepper
                 label="Rounds"
@@ -151,11 +151,13 @@ function PresetCard({ preset, selected, onSelect }: PresetCardProps) {
       type="button"
       onClick={onSelect}
       className={`rounded-2xl border px-4 py-3 text-left transition active:scale-[0.98] active:border-accent/60 active:bg-accent/20 active:text-round ${
-        selected ? 'border-accent bg-accent/10 text-round' : 'border-white/10 text-white/70 hover:border-white/25'
+        selected
+          ? 'border-accent bg-accent/10 text-round'
+          : 'border-slate-900/10 text-slate-900/70 hover:border-slate-900/25 dark:border-white/10 dark:text-white/70 dark:hover:border-white/25'
       }`}
     >
       <div className="font-semibold">{preset.label}</div>
-      <div className="text-xs text-white/50">
+      <div className="text-xs text-slate-900/50 dark:text-white/50">
         {preset.unlimited
           ? `Unlimited × ${formatTime(preset.roundSeconds * 1000)} / ${formatTime(preset.restSeconds * 1000)} rest`
           : `${preset.rounds} × ${formatTime(preset.roundSeconds * 1000)} / ${formatTime(preset.restSeconds * 1000)} rest`}

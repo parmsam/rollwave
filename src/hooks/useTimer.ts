@@ -12,6 +12,7 @@ import { useVibration } from './useVibration'
 import { useWakeLock } from './useWakeLock'
 
 const TICK_INTERVAL_MS = 250
+const ROUND_START_VOICE_DELAY_MS = 200
 
 export function useTimer(config: TimerConfig, muted: boolean) {
   const [state, setState] = useState(() => createInitialState(config))
@@ -22,9 +23,10 @@ export function useTimer(config: TimerConfig, muted: boolean) {
   const announcedWarningRef = useRef(false)
   const announcedTickRef = useRef<number | null>(null)
 
-  const { unlock, playClip, playBell } = useAudioPlayer(muted)
+  const { unlock, playClip, playBell, playStartChime } = useAudioPlayer(muted)
   const wakeLock = useWakeLock()
   const vibrate = useVibration()
+  const pendingRoundVoiceRef = useRef<number | null>(null)
 
   const dispatch = useCallback((action: TimerAction) => {
     setState((prev) => reduceTimer(prev, action, Date.now()))
@@ -74,10 +76,18 @@ export function useTimer(config: TimerConfig, muted: boolean) {
         case 'getReady':
           playClip('get-ready')
           break
-        case 'round':
-          playClip(resolveRoundClipId(state.currentRound))
+        case 'round': {
+          // A short bright chime first, then the round announcement a beat
+          // later — mirrors the round-end bell-then-voice pattern instead of
+          // playing both at the exact same instant.
+          playStartChime()
+          const roundNumber = state.currentRound
+          pendingRoundVoiceRef.current = window.setTimeout(() => {
+            playClip(resolveRoundClipId(roundNumber))
+          }, ROUND_START_VOICE_DELAY_MS)
           vibrate(80)
           break
+        }
         case 'rest':
           // `rest` is only ever entered right after a round ends.
           playBell()
@@ -97,7 +107,16 @@ export function useTimer(config: TimerConfig, muted: boolean) {
       prevPhaseRef.current = state.phase
       prevRoundRef.current = state.currentRound
     }
-  }, [state.phase, state.currentRound, playClip, playBell, vibrate, wakeLock])
+    // Cancel a still-pending round-start voice cue if the phase moves on
+    // again before it fires (e.g. rapid Skip presses) — otherwise a stale
+    // "Round 2" could play late, on top of whatever's happening in round 3.
+    return () => {
+      if (pendingRoundVoiceRef.current !== null) {
+        window.clearTimeout(pendingRoundVoiceRef.current)
+        pendingRoundVoiceRef.current = null
+      }
+    }
+  }, [state.phase, state.currentRound, playClip, playBell, playStartChime, vibrate, wakeLock])
 
   // Sub-phase cues that depend on continuously elapsing time: get-ready
   // countdown ticks, the round-end 4-3-2-1 countdown, and the once-per-round

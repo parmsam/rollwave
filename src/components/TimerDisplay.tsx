@@ -38,7 +38,7 @@ export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, 
         {/* Preact doesn't camelCase->kebab-case these SVG presentation
             attributes the way React does — using strokeWidth etc. here
             silently no-ops, so these must be the raw kebab-case names. */}
-        <circle cx="150" cy="150" r={RADIUS} fill="none" stroke="rgba(255,255,255,0.12)" stroke-width={TRACK_STROKE} />
+        <circle cx="150" cy="150" r={RADIUS} fill="none" stroke="var(--color-track)" stroke-width={TRACK_STROKE} />
         <circle
           cx="150"
           cy="150"
@@ -53,7 +53,7 @@ export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, 
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <span className="text-xs font-semibold tracking-[0.3em] text-white/50 uppercase lg:text-sm">
+        <span className="text-xs font-semibold tracking-[0.3em] text-slate-900/50 uppercase lg:text-sm dark:text-white/50">
           {phaseLabel(phase)}
           {phase === 'round' || phase === 'rest' ? ` · ${currentRound}` : ''}
         </span>

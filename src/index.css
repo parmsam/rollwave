@@ -1,13 +1,35 @@
 @import 'tailwindcss';
 
 @theme {
+  /* Fixed — always a dark color for text sitting on a bright accent
+     button, regardless of theme (those buttons are bright in both). */
   --color-ink: #05070d;
+  /* Everything else below is overridden for light mode further down. */
+  --color-page: #05070d;
+  --color-page-highlight: #101a33;
   --color-panel: #0d1220;
   --color-round: #eafcff;
   --color-rest: #4f8dfd;
   --color-warn: #ff3b5c;
   --color-accent: #22d3ee;
   --color-accent-2: #8b5cf6;
+  --color-track: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-page: #f4f6fb;
+    --color-page-highlight: #ffffff;
+    --color-panel: #ffffff;
+    --color-round: #0f172a;
+    /* Slightly deeper/more saturated than the dark-mode accents — the
+       bright neon shades read as washed-out on a light background. */
+    --color-rest: #2563eb;
+    --color-warn: #dc2626;
+    --color-accent: #0e7490;
+    --color-accent-2: #7c3aed;
+    --color-track: rgba(15, 23, 42, 0.12);
+  }
 }
 
 html,
@@ -18,7 +40,7 @@ body,
 
 body {
   margin: 0;
-  background: radial-gradient(circle at 50% -10%, #101a33 0%, var(--color-ink) 55%);
+  background: radial-gradient(circle at 50% -10%, var(--color-page-highlight) 0%, var(--color-page) 55%);
   color: var(--color-round);
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
