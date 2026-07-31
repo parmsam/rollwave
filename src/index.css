@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+/* Tailwind's `dark:` variant defaults to prefers-color-scheme, which can't
+   be manually overridden. Key it off the same data-theme attribute the CSS
+   custom properties below use, so a manual Light/Dark choice (useTheme.ts)
+   flips *everything* consistently, not just the semantic color tokens. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 @theme {
   /* Fixed — always a dark color for text sitting on a bright accent
      button, regardless of theme (those buttons are bright in both). */
@@ -16,6 +22,7 @@
   --color-track: rgba(255, 255, 255, 0.12);
 }
 
+/* Auto (the default): follows the OS/browser preference. */
 @media (prefers-color-scheme: light) {
   :root {
     --color-page: #f4f6fb;
@@ -30,6 +37,35 @@
     --color-accent-2: #7c3aed;
     --color-track: rgba(15, 23, 42, 0.12);
   }
+}
+
+/* Manual override (ThemeToggle sets data-theme on <html>). An attribute
+   selector on :root outranks a bare :root in a media query regardless of
+   source order, so these always win over the system preference above —
+   in both directions. Keep these palettes in sync with the @theme block
+   (dark) and the media query above (light) if either ever changes. */
+:root[data-theme='dark'] {
+  --color-page: #05070d;
+  --color-page-highlight: #101a33;
+  --color-panel: #0d1220;
+  --color-round: #eafcff;
+  --color-rest: #4f8dfd;
+  --color-warn: #ff3b5c;
+  --color-accent: #22d3ee;
+  --color-accent-2: #8b5cf6;
+  --color-track: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='light'] {
+  --color-page: #f4f6fb;
+  --color-page-highlight: #ffffff;
+  --color-panel: #ffffff;
+  --color-round: #0f172a;
+  --color-rest: #2563eb;
+  --color-warn: #dc2626;
+  --color-accent: #0e7490;
+  --color-accent-2: #7c3aed;
+  --color-track: rgba(15, 23, 42, 0.12);
 }
 
 html,

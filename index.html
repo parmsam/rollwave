@@ -2,6 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Set data-theme before first paint, to avoid a flash of the wrong
+      // theme. Mirrors useTheme.ts's resolution logic; keep them in sync.
+      (function () {
+        try {
+          var stored = localStorage.getItem('rollwave:themePreference');
+          var pref = stored ? JSON.parse(stored) : 'system';
+          var effective =
+            pref === 'light' || pref === 'dark'
+              ? pref
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', effective);
+        } catch (e) {
+          // localStorage unavailable or malformed — fall through to the
+          // default dark @theme values / prefers-color-scheme in CSS.
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />

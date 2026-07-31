@@ -8,11 +8,13 @@ import { LiveClock } from './components/LiveClock'
 import { PhaseIndicator } from './components/PhaseIndicator'
 import { PresetPicker } from './components/PresetPicker'
 import { StatsView } from './components/StatsView'
+import { ThemeToggle } from './components/ThemeToggle'
 import { TimerDisplay } from './components/TimerDisplay'
 import { VolumeToggle } from './components/VolumeToggle'
 import { useFullscreen } from './hooks/useFullscreen'
 import { useHistory } from './hooks/useHistory'
 import { useSettings } from './hooks/useSettings'
+import { useTheme } from './hooks/useTheme'
 import { useTimer } from './hooks/useTimer'
 import { completedRoundsForPartialReset } from './lib/timerEngine'
 import { phaseLabel } from './lib/format'
@@ -40,6 +42,7 @@ export function App() {
   const { state, remainingMs, progressRatio, isWarning, actions } = useTimer(activeConfig, muted)
   const { sessions, addSession, clearHistory, stats } = useHistory()
   const fullscreen = useFullscreen()
+  const theme = useTheme()
 
   const [view, setView] = useState<'setup' | 'history'>('setup')
   const sessionRef = useRef<ActiveSession | null>(null)
@@ -161,15 +164,18 @@ export function App() {
             onReset={handleReset}
             onSkip={actions.skip}
           />
-          <label className="flex items-center gap-2 text-xs text-slate-900/40 dark:text-white/40">
-            <input
-              type="checkbox"
-              checked={showClock}
-              onChange={(event) => setShowClock((event.target as HTMLInputElement).checked)}
-              className="h-3.5 w-3.5 accent-accent"
-            />
-            Show live clock
-          </label>
+          <div className="flex flex-col items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-slate-900/40 dark:text-white/40">
+              <input
+                type="checkbox"
+                checked={showClock}
+                onChange={(event) => setShowClock((event.target as HTMLInputElement).checked)}
+                className="h-3.5 w-3.5 accent-accent"
+              />
+              Show live clock
+            </label>
+            <ThemeToggle preference={theme.preference} onChange={theme.setPreference} />
+          </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-10">

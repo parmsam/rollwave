@@ -16,13 +16,24 @@
 - **Drift-free timer engine** — stays accurate even if the tab is backgrounded or the phone sleeps mid-round
 - **Voice cues** ("Round 1", "Go", "Rest", a spoken 4-3-2-1 countdown near round end, "Session complete") from pre-generated audio clips — no janky in-browser text-to-speech, identical on every device — plus a bright chime as each round starts and a deep bell as it ends
 - **Timer ring** drains from a full, bold arc down to empty as each phase elapses, iOS Clock–style
-- **Light and dark mode**, following your system preference
+- **Light and dark mode**, following your system preference by default with a manual Auto/Light/Dark override on the setup screen
 - **Session history**: a streak counter and per-session log (rounds completed, duration) saved locally, viewable from the setup screen
 - **Wake Lock** keeps the screen on during a session; **vibration** pulses on phase changes (Android); optional live clock readout
 - **Keyboard shortcuts** for laptop use — `space` start/pause, `r` reset, `s` / `→` skip
 - **Fullscreen mode** and a layout that scales up on laptop/tablet screens
 - **Installable PWA** — works offline, installs to your home screen on iOS/Android/desktop
 - Accessible: ARIA live region announces phase changes for screen readers
+
+## Built-in preset defaults
+
+The single source of truth is [`src/lib/presets.ts`](./src/lib/presets.ts) — update the table below to match if those values change.
+
+| Preset | Rounds | Round length | Rest length | Get ready | Warning at |
+| --- | --- | --- | --- | --- | --- |
+| Competition | 5 | 5:00 | 1:00 | 5s | 10s left |
+| Drilling | 6 | 3:00 | 0:30 | 5s | 10s left |
+| Flow Rolling | 4 | 8:00 | 0:30 | 5s | 10s left |
+| Open Mat | Unlimited | 5:00 | 1:00 | 5s | 10s left |
 
 ## Development
 
