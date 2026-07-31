@@ -7,7 +7,7 @@ export const PRESETS: TimerConfig[] = [
     rounds: 5,
     roundSeconds: 300,
     restSeconds: 60,
-    getReadySeconds: 5,
+    getReadySeconds: 10,
     warningSeconds: 10,
   },
   {
@@ -16,7 +16,7 @@ export const PRESETS: TimerConfig[] = [
     rounds: 6,
     roundSeconds: 180,
     restSeconds: 30,
-    getReadySeconds: 5,
+    getReadySeconds: 10,
     warningSeconds: 10,
   },
   {
@@ -25,7 +25,7 @@ export const PRESETS: TimerConfig[] = [
     rounds: 4,
     roundSeconds: 480,
     restSeconds: 30,
-    getReadySeconds: 5,
+    getReadySeconds: 10,
     warningSeconds: 10,
   },
   {
@@ -34,7 +34,7 @@ export const PRESETS: TimerConfig[] = [
     rounds: 1,
     roundSeconds: 300,
     restSeconds: 60,
-    getReadySeconds: 5,
+    getReadySeconds: 10,
     warningSeconds: 10,
     unlimited: true,
   },
@@ -48,7 +48,7 @@ export function createCustomPreset(index: number): TimerConfig {
     rounds: 5,
     roundSeconds: 300,
     restSeconds: 60,
-    getReadySeconds: 5,
+    getReadySeconds: 10,
     warningSeconds: 10,
   }
 }

@@ -16,7 +16,7 @@ const ROUND_START_VOICE_DELAY_MS = 200
 
 export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
   const [state, setState] = useState(() => createInitialState(config))
-  const [, setClockTick] = useState(0)
+  const [clockTick, setClockTick] = useState(0)
 
   const prevPhaseRef = useRef(state.phase)
   const prevRoundRef = useRef(state.currentRound)
@@ -149,9 +149,13 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
         vibrate(60)
       }
     }
-    // clockTick isn't read, only used to re-run this effect on each tick.
+    // clockTick isn't read inside the effect body — it's only here to force
+    // a re-run every ~250ms. Without it, this effect only fires when `state`
+    // changes *reference*, which (per reduceTimer's TICK case) only happens
+    // at an actual phase/round transition — so mid-phase, none of these
+    // ticks/warnings would ever fire at all.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, playClip, vibrate])
+  }, [state, playClip, vibrate, clockTick])
 
   const start = useCallback(() => {
     unlock()

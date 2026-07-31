@@ -119,7 +119,7 @@ export function PresetPicker({
               value={selectedCustom.getReadySeconds}
               step={1}
               min={0}
-              max={5}
+              max={20}
               format={(v) => `${v}s`}
               onChange={(getReadySeconds) => onUpdateCustom(selectedCustom.id, { getReadySeconds })}
             />

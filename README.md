@@ -30,10 +30,10 @@ The single source of truth is [`src/lib/presets.ts`](./src/lib/presets.ts) — u
 
 | Preset | Rounds | Round length | Rest length | Get ready | Warning at |
 | --- | --- | --- | --- | --- | --- |
-| Competition | 5 | 5:00 | 1:00 | 5s | 10s left |
-| Drilling | 6 | 3:00 | 0:30 | 5s | 10s left |
-| Flow Rolling | 4 | 8:00 | 0:30 | 5s | 10s left |
-| Open Mat | Unlimited | 5:00 | 1:00 | 5s | 10s left |
+| Competition | 5 | 5:00 | 1:00 | 10s | 10s left |
+| Drilling | 6 | 3:00 | 0:30 | 10s | 10s left |
+| Flow Rolling | 4 | 8:00 | 0:30 | 10s | 10s left |
+| Open Mat | Unlimited | 5:00 | 1:00 | 10s | 10s left |
 
 ## Development
 
