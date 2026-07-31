@@ -45,6 +45,11 @@ body {
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  /* Prevents iOS Safari's double-tap-to-zoom from firing on a quick
+     double-tap of a button — pinch-zoom still works fine, this only
+     tells the browser not to treat two close-together taps as a zoom
+     gesture. */
+  touch-action: manipulation;
 }
 
 @keyframes pulse-glow {
