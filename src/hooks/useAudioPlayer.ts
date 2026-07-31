@@ -75,27 +75,37 @@ export function useAudioPlayer(muted: boolean) {
     [muted],
   )
 
-  // Short synthesized bell chime for "round just ended" — no audio asset
-  // needed, and it's layered on its own gain node rather than routed through
-  // currentSourceRef, so it never gets cut short by the next voice cue.
+  // Synthesized temple-bell / singing-bowl chime for "round just ended" — no
+  // audio asset needed, and each partial has its own gain node rather than
+  // being routed through currentSourceRef, so it never gets cut short by the
+  // next voice cue. Deep fundamental + inharmonic overtones (not clean
+  // octaves — that's what gives a real bell its shimmering quality) with a
+  // slow decay, rather than the bright short chime this replaced.
   const playBell = useCallback(() => {
     if (muted) return
     const ctx = ctxRef.current
     if (!ctx) return
     const now = ctx.currentTime
-    const gain = ctx.createGain()
-    gain.connect(ctx.destination)
-    gain.gain.setValueAtTime(0.0001, now)
-    gain.gain.exponentialRampToValueAtTime(0.5, now + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9)
+    const fundamental = 220
 
-    for (const freq of [880, 1320, 1760]) {
+    const partials = [
+      { ratio: 1, gain: 0.5, decay: 3.2 },
+      { ratio: 2.4, gain: 0.28, decay: 2.4 },
+      { ratio: 3.8, gain: 0.16, decay: 1.6 },
+      { ratio: 5.4, gain: 0.08, decay: 1.0 },
+    ]
+    for (const { ratio, gain: peak, decay } of partials) {
       const osc = ctx.createOscillator()
       osc.type = 'sine'
-      osc.frequency.value = freq
+      osc.frequency.value = fundamental * ratio
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(0.0001, now)
+      gain.gain.exponentialRampToValueAtTime(peak, now + 0.015)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + decay)
       osc.connect(gain)
+      gain.connect(ctx.destination)
       osc.start(now)
-      osc.stop(now + 0.9)
+      osc.stop(now + decay + 0.1)
     }
   }, [muted])
 
