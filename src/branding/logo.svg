@@ -1,0 +1,49 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROLLWAVE logo">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#101a33" />
+      <stop offset="100%" stop-color="#05070d" />
+    </radialGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)" />
+
+  <!-- stopwatch crown -->
+  <rect x="242" y="52" width="28" height="30" rx="8" fill="#8b5cf6" />
+
+  <!-- progress ring, gap suggests a round in progress -->
+  <circle
+    cx="256"
+    cy="266"
+    r="170"
+    fill="none"
+    stroke="url(#ring)"
+    stroke-width="28"
+    stroke-linecap="round"
+    stroke-dasharray="801 267"
+    transform="rotate(-90 256 266)"
+  />
+
+  <!-- pulse / wave glyph -->
+  <path
+    d="M120,266 C155,266 155,200 190,200 C225,200 225,332 260,332 C295,332 295,200 330,200 C365,200 365,266 392,266"
+    fill="none"
+    stroke="#22d3ee"
+    stroke-opacity="0.45"
+    stroke-width="16"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M120,266 C155,266 155,200 190,200 C225,200 225,332 260,332 C295,332 295,200 330,200 C365,200 365,266 392,266"
+    fill="none"
+    stroke="#eafcff"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

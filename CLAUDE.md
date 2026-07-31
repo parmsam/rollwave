@@ -1,0 +1,64 @@
+# ROLLWAVE
+
+A futuristic BJJ round timer PWA. Preact + TypeScript + Vite + Tailwind CSS v4, deployed to GitHub Pages.
+
+## Stack & why
+
+- **Preact**, not React — ~3KB runtime, keeps the PWA fast to boot on mobile. Same hooks API (`preact/hooks`).
+- **Tailwind v4** via `@tailwindcss/vite` — no `tailwind.config.js`; theme tokens (colors, etc.) live in the `@theme` block in `src/index.css`. Custom theme colors (`--color-accent`, `--color-rest`, `--color-warn`, ...) automatically become utilities (`bg-accent`, `text-warn`, etc.).
+- **vite-plugin-pwa** (`workbox` / `generateSW` mode) — manifest + service worker generated at build time from config in `vite.config.ts`.
+- **Vitest** for unit tests, `jsdom` environment (configured inline in `vite.config.ts`'s `test` block, via `defineConfig` imported from `vitest/config` — not plain `vite`, or the `test` key won't typecheck).
+
+## Architecture
+
+**`src/lib/timerEngine.ts`** is the whole app's brain: a pure, framework-agnostic reducer `reduceTimer(state, action, now)`. `now` is always passed in, never read internally — this is what makes it trivially testable (see `timerEngine.test.ts`) and what makes natural phase expiry and an explicit `SKIP` go through the *identical* code path.
+
+Timing is **deadline-based**, not a decrementing counter: every phase transition sets `phaseEndsAtEpochMs = <transition time> + duration`. A `requestAnimationFrame` loop in `hooks/useTimer.ts` just recomputes `remaining = deadline - Date.now()` every frame — it can never drift, and correctly self-corrects after the tab is backgrounded/throttled for any length of time via the `catchUp()` loop, which chains through as many missed phase transitions as needed (anchoring each new deadline off the *previous* deadline, not off `now`, so wall-clock accuracy is preserved even through multiple skipped phases).
+
+If you need to change how phases flow (e.g. add a phase), edit `nextPhaseAfter()` in `timerEngine.ts` and add engine-level tests first — `useTimer.ts` and every component downstream just reacts to whatever `reduceTimer` produces.
+
+**`hooks/useTimer.ts`** wraps the engine: owns the rAF loop, `visibilitychange` catch-up, and — critically — keeps all side effects (audio, vibration) in `useEffect`s that diff `(phase, currentRound)`, never inside the pure reducer.
+
+**Settings**: `hooks/useSettings.ts` composes `useLocalStorage` for the selected preset, the custom config (versioned envelope — see `SCHEMA_VERSION`, bump and handle migration there if the `TimerConfig` shape ever changes), and mute state. Presets live in `src/lib/presets.ts`.
+
+## Audio
+
+Voice cues are **pre-generated, not spoken at runtime**. Runtime `Web Speech API` was deliberately rejected — voice quality/consistency varies too much across browsers/devices. Instead:
+
+- `src/lib/audioClips.ts` is the single source of truth: the list of clips (id + spoken text) and the id-resolution helpers (`resolveRoundClipId`, `resolveWarningClipId`, `resolveGetReadyTickClipId`).
+- `scripts/generate-audio.ts` reads that same manifest and calls the OpenAI TTS API once per clip, writing `public/audio/<id>.mp3`. Run it whenever `AUDIO_CLIPS` changes:
+  ```
+  OPENAI_API_KEY=sk-... npm run generate:audio
+  ```
+  It's idempotent (skips existing files; pass `--force` to regenerate everything). **This never runs in CI** — the generated mp3s are committed, so the deployed app has zero runtime API dependency.
+- `hooks/useAudioPlayer.ts` decodes all clips into `AudioBuffer`s via the Web Audio API. The `AudioContext` is created/resumed inside the Start button's click handler specifically — mobile browsers require a user gesture to unlock audio, and this is the one guaranteed gesture in the flow.
+- If a clip file is missing (e.g. you haven't run `generate:audio` yet), playback for that cue just silently no-ops — the app is fully usable without any audio assets present.
+
+## Icons / branding
+
+`src/branding/logo.svg` is the single source design file (ring + wave motif). `scripts/generate-icons.ts` rasterizes it (via `sharp` + `png-to-ico`) into every PNG size the manifest/`index.html` needs plus `favicon.ico`. Re-run after editing the logo:
+```
+npm run generate:icons
+```
+
+## GitHub Pages deployment
+
+- `vite.config.ts` sets `base: '/rollwave/'` — **must exactly match the repo name** (`parmsam/rollwave`), since this is a project site (`https://parmsam.github.io/rollwave/`), not a user/org root site. If the repo is ever renamed, update `base` and redeploy.
+- Any hardcoded root-relative asset path in a component (e.g. an `<img src="/icons/...">`) will 404 under a base path — always prefix with `import.meta.env.BASE_URL` (see `app.tsx`'s header logo, or `clipUrl()` in `audioClips.ts`). `index.html`'s own `<link>`/`<script>` tags are auto-rewritten by Vite; JS string literals are not.
+- `.github/workflows/deploy.yml` builds on every push to `main` and deploys via `actions/upload-pages-artifact` + `actions/deploy-pages` — no secrets required (audio is pre-baked, not generated in CI).
+- One manual one-time setting: repo **Settings → Pages → Build and deployment → Source = "GitHub Actions"**.
+
+## Commands
+
+```
+npm run dev              # local dev server
+npm run build             # typecheck + production build
+npm test                  # vitest (single run)
+npm run test:watch        # vitest watch mode
+npm run generate:audio     # regenerate public/audio/*.mp3 (needs OPENAI_API_KEY)
+npm run generate:icons     # regenerate public/icons/*, favicon.ico, favicon.svg from src/branding/logo.svg
+```
+
+## Known npm audit findings
+
+`npm audit` flags a high-severity DoS advisory in `brace-expansion`, pulled in transitively through `vite-plugin-pwa` → `workbox-build`. It's a dev-only build-time dependency (not shipped to the deployed app) and fixing it requires a breaking `vite-plugin-pwa` major bump — left as-is; revisit if `vite-plugin-pwa` ships a non-breaking fix.
