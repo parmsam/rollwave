@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { AriaLiveRegion } from './components/AriaLiveRegion'
 import { Controls } from './components/Controls'
+import { FullscreenToggle } from './components/FullscreenToggle'
+import { GitHubLink } from './components/GitHubLink'
 import { InstallPrompt } from './components/InstallPrompt'
 import { LiveClock } from './components/LiveClock'
 import { PhaseIndicator } from './components/PhaseIndicator'
@@ -8,6 +10,7 @@ import { PresetPicker } from './components/PresetPicker'
 import { StatsView } from './components/StatsView'
 import { TimerDisplay } from './components/TimerDisplay'
 import { VolumeToggle } from './components/VolumeToggle'
+import { useFullscreen } from './hooks/useFullscreen'
 import { useHistory } from './hooks/useHistory'
 import { useSettings } from './hooks/useSettings'
 import { useTimer } from './hooks/useTimer'
@@ -36,6 +39,7 @@ export function App() {
   } = useSettings()
   const { state, remainingMs, progressRatio, isWarning, actions } = useTimer(activeConfig, muted)
   const { sessions, addSession, clearHistory, stats } = useHistory()
+  const fullscreen = useFullscreen()
 
   const [view, setView] = useState<'setup' | 'history'>('setup')
   const sessionRef = useRef<ActiveSession | null>(null)
@@ -101,7 +105,12 @@ export function App() {
       <AriaLiveRegion message={announcement} />
 
       <header className="mb-8 flex w-full items-center justify-between">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setView('setup')}
+          aria-label="Go to setup"
+          className="flex items-center gap-2 transition active:scale-95"
+        >
           <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="h-8 w-8" />
           <span className="text-lg font-bold tracking-widest">ROLLWAVE</span>
           {stats.currentStreak > 0 && (
@@ -109,7 +118,7 @@ export function App() {
               {stats.currentStreak}🔥
             </span>
           )}
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           {showClock && <LiveClock />}
           {isSetup && (
@@ -122,6 +131,8 @@ export function App() {
               {view === 'history' ? '⏱️' : '📊'}
             </button>
           )}
+          {fullscreen.supported && <FullscreenToggle isFullscreen={fullscreen.isFullscreen} onToggle={fullscreen.toggle} />}
+          <GitHubLink />
           <VolumeToggle muted={muted} onToggle={() => setMuted((prev) => !prev)} />
         </div>
       </header>
@@ -163,7 +174,6 @@ export function App() {
             remainingMs={remainingMs}
             progressRatio={progressRatio}
             isWarning={isWarning}
-            warningSeconds={state.config.warningSeconds}
           />
           <PhaseIndicator
             currentRound={state.currentRound}

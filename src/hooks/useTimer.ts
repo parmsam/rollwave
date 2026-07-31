@@ -106,7 +106,12 @@ export function useTimer(config: TimerConfig, muted: boolean) {
     const now = Date.now()
     if (state.phase === 'getReady') {
       const secondsLeft = Math.ceil(remainingMs(state, now) / 1000)
-      const clipId = resolveGetReadyTickClipId(secondsLeft)
+      // Skip the tick that exactly matches the phase's starting duration —
+      // that instant belongs to the "Get ready" announcement itself (fired
+      // by the transition effect above, in the same render pass); without
+      // this guard the tick immediately stops "Get ready" a few ms in.
+      const clipId =
+        secondsLeft < state.config.getReadySeconds ? resolveGetReadyTickClipId(secondsLeft) : null
       if (clipId && announcedTickRef.current !== secondsLeft) {
         announcedTickRef.current = secondsLeft
         playClip(clipId)

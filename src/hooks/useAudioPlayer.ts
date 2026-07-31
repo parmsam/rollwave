@@ -49,30 +49,54 @@ export function useAudioPlayer(muted: boolean) {
     void loadAll()
   }, [ensureContext, loadAll])
 
+  const playBuffer = useCallback((ctx: AudioContext, buffer: AudioBuffer) => {
+    // Cues are sequential announcements, never a layered soundscape — cut
+    // off whatever's still playing so back-to-back clips (e.g. the
+    // get-ready countdown's "one" bleeding into the round-start "Go")
+    // never overlap.
+    try {
+      currentSourceRef.current?.stop()
+    } catch {
+      // already stopped/ended — ignore
+    }
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.connect(ctx.destination)
+    source.start()
+    currentSourceRef.current = source
+  }, [])
+
   const playClip = useCallback(
     (id: string) => {
       if (muted) return
       const ctx = ctxRef.current
-      const buffer = buffersRef.current.get(id)
-      if (!ctx || !buffer) return
+      if (!ctx) return
 
-      // Cues are sequential announcements, never a layered soundscape — cut
-      // off whatever's still playing so back-to-back clips (e.g. the
-      // get-ready countdown's "one" bleeding into the round-start "Go")
-      // never overlap.
-      try {
-        currentSourceRef.current?.stop()
-      } catch {
-        // already stopped/ended — ignore
+      const buffer = buffersRef.current.get(id)
+      if (buffer) {
+        playBuffer(ctx, buffer)
+        return
       }
 
-      const source = ctx.createBufferSource()
-      source.buffer = buffer
-      source.connect(ctx.destination)
-      source.start()
-      currentSourceRef.current = source
+      // Not loaded yet — e.g. `loadAll`'s bulk fetch of ~27 small clips is
+      // still in flight on a slower connection when this cue's moment
+      // arrives (browsers cap concurrent per-host connections, so a later
+      // clip can still be mid-fetch). Fetch this one on demand and play it
+      // the instant it's ready rather than silently dropping the cue.
+      void (async () => {
+        try {
+          const res = await fetch(clipUrl(id))
+          if (!res.ok) return
+          const arrayBuffer = await res.arrayBuffer()
+          const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+          buffersRef.current.set(id, audioBuffer)
+          playBuffer(ctx, audioBuffer)
+        } catch {
+          // still unavailable (e.g. clip not generated) — app stays usable, just silent for this cue
+        }
+      })()
     },
-    [muted],
+    [muted, playBuffer],
   )
 
   // Synthesized temple-bell / singing-bowl chime for "round just ended" — no
