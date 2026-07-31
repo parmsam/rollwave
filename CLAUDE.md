@@ -29,12 +29,13 @@ If you need to change how phases flow (e.g. add a phase), edit `nextPhaseAfter()
 
 Voice cues are **pre-generated, not spoken at runtime**. Runtime `Web Speech API` was deliberately rejected — voice quality/consistency varies too much across browsers/devices. Instead:
 
-- `src/lib/audioClips.ts` is the single source of truth: the list of clips (id + spoken text) and the id-resolution helpers (`resolveRoundClipId`, `resolveWarningClipId`, `resolveGetReadyTickClipId`).
-- `scripts/generate-audio.ts` reads that same manifest and calls the OpenAI TTS API once per clip, writing `public/audio/<id>.mp3`. Run it whenever `AUDIO_CLIPS` changes:
+- `src/lib/audioClips.ts` is the single source of truth: the list of clips (id + spoken text), the id-resolution helpers (`resolveRoundClipId`, `resolveWarningClipId`, `resolveGetReadyTickClipId`), and `VOICE_OPTIONS` (currently Onyx/Nova/Fable — 3 deliberately distinct-sounding OpenAI TTS voices, not the full catalog, to keep the generation step and picker UI bounded).
+- **Multi-voice**: clips live at `public/audio/<voice>/<id>.mp3` (`clipUrl(id, voice)`). The chosen voice is a persisted setting (`useSettings.ts`'s `voice`/`setVoice`, key `rollwave:voice`, default `DEFAULT_VOICE` = `'onyx'`), threaded through `useTimer(config, voice, muted)` into `useAudioPlayer(voice, muted)`. The buffer cache there is keyed by `` `${voice}:${id}` ``, not just `id` — this matters: without the voice in the key, switching voices would keep playing whichever voice's clips got cached first. Old voices' buffers stay cached if the user switches back, rather than being evicted.
+- `scripts/generate-audio.ts` reads `AUDIO_CLIPS` × `VOICE_OPTIONS` and calls the OpenAI TTS API once per clip per voice, writing into each voice's subfolder. Run it whenever either list changes:
   ```
   OPENAI_API_KEY=sk-... npm run generate:audio
   ```
-  It's idempotent (skips existing files; pass `--force` to regenerate everything). **This never runs in CI** — the generated mp3s are committed, so the deployed app has zero runtime API dependency.
+  It's idempotent (skips existing files; pass `--force` to regenerate everything). **This never runs in CI** — the generated mp3s are committed, so the deployed app has zero runtime API dependency. Adding a voice today costs ~28 TTS calls and roughly +250-300KB of committed audio (all 3 voices together are ~2.3MB).
 - `hooks/useAudioPlayer.ts` decodes all clips into `AudioBuffer`s via the Web Audio API. The `AudioContext` is created/resumed inside the Start button's click handler specifically — mobile browsers require a user gesture to unlock audio, and this is the one guaranteed gesture in the flow.
 - If a clip file is missing (e.g. you haven't run `generate:audio` yet), playback for that cue just silently no-ops — the app is fully usable without any audio assets present.
 - **Clips never overlap**: `playClip()` tracks the currently-playing `AudioBufferSourceNode` in a ref and `.stop()`s it before starting the next one (voice cues are sequential announcements, not a layered soundscape). Found this the hard way — the get-ready countdown's "one" was bleeding into the round-start "Go" before this fix.

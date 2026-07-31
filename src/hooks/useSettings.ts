@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'preact/hooks'
+import { DEFAULT_VOICE } from '../lib/audioClips'
 import { createCustomPreset, PRESETS } from '../lib/presets'
 import type { TimerConfig } from '../lib/types'
 import { useLocalStorage } from './useLocalStorage'
@@ -22,6 +23,7 @@ export function useSettings() {
   })
   const [muted, setMuted] = useLocalStorage('rollwave:muted', false)
   const [showClock, setShowClock] = useLocalStorage('rollwave:showClock', false)
+  const [voice, setVoice] = useLocalStorage('rollwave:voice', DEFAULT_VOICE)
 
   const customPresets = storedCustom.v === SCHEMA_VERSION ? storedCustom.presets : []
 
@@ -69,6 +71,8 @@ export function useSettings() {
     setMuted,
     showClock,
     setShowClock,
+    voice,
+    setVoice,
     addCustomPreset,
     updateCustomPreset,
     deleteCustomPreset,

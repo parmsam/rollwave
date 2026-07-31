@@ -4,10 +4,12 @@ import { AUDIO_CLIPS, clipUrl } from '../lib/audioClips'
 type AudioContextCtor = typeof AudioContext
 
 /** Web Audio buffer cache + playback. Lower latency and safe overlap vs plain <audio> elements. */
-export function useAudioPlayer(muted: boolean) {
+export function useAudioPlayer(voice: string, muted: boolean) {
   const ctxRef = useRef<AudioContext | null>(null)
+  // Keyed by `${voice}:${id}` so switching voices can't reuse a stale
+  // buffer from a different voice, and previously-loaded voices stay
+  // cached if the user switches back.
   const buffersRef = useRef<Map<string, AudioBuffer>>(new Map())
-  const loadingRef = useRef(false)
   const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
 
   const ensureContext = useCallback((): AudioContext | null => {
@@ -25,23 +27,23 @@ export function useAudioPlayer(muted: boolean) {
 
   const loadAll = useCallback(async () => {
     const ctx = ensureContext()
-    if (!ctx || loadingRef.current) return
-    loadingRef.current = true
+    if (!ctx) return
     await Promise.all(
       AUDIO_CLIPS.map(async (clip) => {
-        if (buffersRef.current.has(clip.id)) return
+        const key = `${voice}:${clip.id}`
+        if (buffersRef.current.has(key)) return
         try {
-          const res = await fetch(clipUrl(clip.id))
+          const res = await fetch(clipUrl(clip.id, voice))
           if (!res.ok) return
           const arrayBuffer = await res.arrayBuffer()
           const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-          buffersRef.current.set(clip.id, audioBuffer)
+          buffersRef.current.set(key, audioBuffer)
         } catch {
           // clip missing or undecodable (e.g. not yet generated) — app still works, just silent for this cue
         }
       }),
     )
-  }, [ensureContext])
+  }, [ensureContext, voice])
 
   /** Must be invoked from inside a user-gesture handler (the Start button) to satisfy mobile autoplay rules. */
   const unlock = useCallback(() => {
@@ -72,7 +74,8 @@ export function useAudioPlayer(muted: boolean) {
       const ctx = ctxRef.current
       if (!ctx) return
 
-      const buffer = buffersRef.current.get(id)
+      const key = `${voice}:${id}`
+      const buffer = buffersRef.current.get(key)
       if (buffer) {
         playBuffer(ctx, buffer)
         return
@@ -81,22 +84,23 @@ export function useAudioPlayer(muted: boolean) {
       // Not loaded yet — e.g. `loadAll`'s bulk fetch of ~27 small clips is
       // still in flight on a slower connection when this cue's moment
       // arrives (browsers cap concurrent per-host connections, so a later
-      // clip can still be mid-fetch). Fetch this one on demand and play it
-      // the instant it's ready rather than silently dropping the cue.
+      // clip can still be mid-fetch), or the voice just changed. Fetch this
+      // one on demand and play it the instant it's ready rather than
+      // silently dropping the cue.
       void (async () => {
         try {
-          const res = await fetch(clipUrl(id))
+          const res = await fetch(clipUrl(id, voice))
           if (!res.ok) return
           const arrayBuffer = await res.arrayBuffer()
           const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-          buffersRef.current.set(id, audioBuffer)
+          buffersRef.current.set(key, audioBuffer)
           playBuffer(ctx, audioBuffer)
         } catch {
           // still unavailable (e.g. clip not generated) — app stays usable, just silent for this cue
         }
       })()
     },
-    [muted, playBuffer],
+    [muted, voice, playBuffer],
   )
 
   // Synthesized temple-bell / singing-bowl chime for "round just ended" — no

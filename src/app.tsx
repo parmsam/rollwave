@@ -10,6 +10,7 @@ import { PresetPicker } from './components/PresetPicker'
 import { StatsView } from './components/StatsView'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TimerDisplay } from './components/TimerDisplay'
+import { VoicePicker } from './components/VoicePicker'
 import { VolumeToggle } from './components/VolumeToggle'
 import { useFullscreen } from './hooks/useFullscreen'
 import { useHistory } from './hooks/useHistory'
@@ -35,11 +36,13 @@ export function App() {
     setMuted,
     showClock,
     setShowClock,
+    voice,
+    setVoice,
     addCustomPreset,
     updateCustomPreset,
     deleteCustomPreset,
   } = useSettings()
-  const { state, remainingMs, progressRatio, isWarning, actions } = useTimer(activeConfig, muted)
+  const { state, remainingMs, progressRatio, isWarning, actions } = useTimer(activeConfig, voice, muted)
   const { sessions, addSession, clearHistory, stats } = useHistory()
   const fullscreen = useFullscreen()
   const theme = useTheme()
@@ -175,6 +178,7 @@ export function App() {
               Show live clock
             </label>
             <ThemeToggle preference={theme.preference} onChange={theme.setPreference} />
+            <VoicePicker voice={voice} onChange={setVoice} />
           </div>
         </div>
       ) : (

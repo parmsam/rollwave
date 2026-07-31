@@ -4,6 +4,21 @@ export interface AudioClip {
   text: string
 }
 
+export interface VoiceOption {
+  id: string
+  label: string
+  description: string
+}
+
+/** Three deliberately distinct-sounding OpenAI TTS voices — not the full catalog, to keep generation/maintenance bounded. */
+export const VOICE_OPTIONS: VoiceOption[] = [
+  { id: 'onyx', label: 'Onyx', description: 'Deep & calm' },
+  { id: 'nova', label: 'Nova', description: 'Bright & energetic' },
+  { id: 'fable', label: 'Fable', description: 'Storyteller' },
+]
+
+export const DEFAULT_VOICE = 'onyx'
+
 const ROUND_CLIP_CAP = 12
 
 export const AUDIO_CLIPS: AudioClip[] = [
@@ -28,8 +43,8 @@ export const AUDIO_CLIPS: AudioClip[] = [
   { id: 'complete', text: 'Session complete. Great work.' },
 ]
 
-export function clipUrl(id: string): string {
-  return `${import.meta.env.BASE_URL}audio/${id}.mp3`
+export function clipUrl(id: string, voice: string): string {
+  return `${import.meta.env.BASE_URL}audio/${voice}/${id}.mp3`
 }
 
 /** Rounds beyond the pre-baked cap just get the plain "Go!" cue instead of a number. */
