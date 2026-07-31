@@ -1,42 +1,76 @@
-import { DEFAULT_CUSTOM_CONFIG, PRESETS, findPreset } from '../lib/presets'
-import type { PresetId, TimerConfig } from '../lib/types'
+import { useCallback, useMemo } from 'preact/hooks'
+import { createCustomPreset, PRESETS } from '../lib/presets'
+import type { TimerConfig } from '../lib/types'
 import { useLocalStorage } from './useLocalStorage'
 
 const SCHEMA_VERSION = 1
 
-interface StoredCustomConfig {
+interface StoredCustomPresets {
   v: number
-  config: TimerConfig
+  presets: TimerConfig[]
 }
 
-/** Persisted preset selection, custom config, and mute setting — the only user-facing settings. */
+/** Persisted preset selection, user-saved custom presets, and mute setting. */
 export function useSettings() {
-  const [selectedPresetId, setSelectedPresetId] = useLocalStorage<PresetId>(
+  const [selectedPresetId, setSelectedPresetId] = useLocalStorage<string>(
     'rollwave:selectedPresetId',
     'competition',
   )
-  const [storedCustom, setStoredCustom] = useLocalStorage<StoredCustomConfig>('rollwave:customConfig', {
+  const [storedCustom, setStoredCustom] = useLocalStorage<StoredCustomPresets>('rollwave:customPresets', {
     v: SCHEMA_VERSION,
-    config: DEFAULT_CUSTOM_CONFIG,
+    presets: [],
   })
   const [muted, setMuted] = useLocalStorage('rollwave:muted', false)
+  const [showClock, setShowClock] = useLocalStorage('rollwave:showClock', false)
 
-  const customConfig = storedCustom.v === SCHEMA_VERSION ? storedCustom.config : DEFAULT_CUSTOM_CONFIG
+  const customPresets = storedCustom.v === SCHEMA_VERSION ? storedCustom.presets : []
 
-  function setCustomConfig(config: TimerConfig) {
-    setStoredCustom({ v: SCHEMA_VERSION, config })
-  }
+  const allPresets = useMemo(() => [...PRESETS, ...customPresets], [customPresets])
+  const activeConfig: TimerConfig = allPresets.find((preset) => preset.id === selectedPresetId) ?? PRESETS[0]
 
-  const activeConfig: TimerConfig =
-    selectedPresetId === 'custom' ? customConfig : (findPreset(selectedPresetId) ?? PRESETS[0])
+  const addCustomPreset = useCallback(() => {
+    const preset = createCustomPreset(customPresets.length + 1)
+    setStoredCustom((prev) => ({
+      v: SCHEMA_VERSION,
+      presets: [...(prev.v === SCHEMA_VERSION ? prev.presets : []), preset],
+    }))
+    setSelectedPresetId(preset.id)
+  }, [customPresets.length, setStoredCustom, setSelectedPresetId])
+
+  const updateCustomPreset = useCallback(
+    (id: string, patch: Partial<TimerConfig>) => {
+      setStoredCustom((prev) => ({
+        v: SCHEMA_VERSION,
+        presets: (prev.v === SCHEMA_VERSION ? prev.presets : []).map((preset) =>
+          preset.id === id ? { ...preset, ...patch } : preset,
+        ),
+      }))
+    },
+    [setStoredCustom],
+  )
+
+  const deleteCustomPreset = useCallback(
+    (id: string) => {
+      setStoredCustom((prev) => ({
+        v: SCHEMA_VERSION,
+        presets: (prev.v === SCHEMA_VERSION ? prev.presets : []).filter((preset) => preset.id !== id),
+      }))
+      if (selectedPresetId === id) setSelectedPresetId('competition')
+    },
+    [selectedPresetId, setStoredCustom, setSelectedPresetId],
+  )
 
   return {
     selectedPresetId,
     setSelectedPresetId,
-    customConfig,
-    setCustomConfig,
+    customPresets,
     activeConfig,
     muted,
     setMuted,
+    showClock,
+    setShowClock,
+    addCustomPreset,
+    updateCustomPreset,
+    deleteCustomPreset,
   }
 }

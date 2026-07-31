@@ -7,10 +7,12 @@ interface Props {
   remainingMs: number
   progressRatio: number
   isWarning: boolean
+  warningSeconds: number
 }
 
 const RADIUS = 130
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+const MAX_GROWTH = 0.08
 
 function ringColor(phase: Phase, isWarning: boolean): string {
   if (phase === 'round') return isWarning ? 'var(--color-warn)' : 'var(--color-accent)'
@@ -19,14 +21,27 @@ function ringColor(phase: Phase, isWarning: boolean): string {
   return 'var(--color-round)'
 }
 
-export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, isWarning }: Props) {
+export function TimerDisplay({
+  phase,
+  currentRound,
+  remainingMs,
+  progressRatio,
+  isWarning,
+  warningSeconds,
+}: Props) {
   const color = ringColor(phase, isWarning)
   const dashOffset = CIRCUMFERENCE * Math.min(Math.max(progressRatio, 0), 1)
+
+  // Grows continuously as the round closes in during the warning window —
+  // 0 right as the warning starts, up to MAX_GROWTH at zero remaining.
+  const urgency =
+    isWarning && warningSeconds > 0 ? Math.min(Math.max(1 - remainingMs / (warningSeconds * 1000), 0), 1) : 0
+  const scale = 1 + urgency * MAX_GROWTH
 
   return (
     <div
       className={`relative aspect-square w-72 sm:w-80 md:w-96 ${isWarning ? 'animate-pulse-glow' : ''}`}
-      style={{ color }}
+      style={{ color, transform: `scale(${scale})`, transition: 'transform 0.25s ease-out' }}
     >
       <svg viewBox="0 0 300 300" className="h-full w-full -rotate-90">
         <circle cx="150" cy="150" r={RADIUS} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="14" />

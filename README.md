@@ -12,10 +12,12 @@
 
 ## Features
 
-- **Presets** for Competition, Drilling, and Flow Rolling, plus a fully custom mode (rounds, round length, rest length, get-ready countdown, warning threshold)
+- **Presets** for Competition, Drilling, Flow Rolling, and Open Mat (unlimited rounds — keeps going until you stop it), plus unlimited named **custom modes** you create, edit, and revisit later
 - **Drift-free timer engine** — stays accurate even if the tab is backgrounded or the phone sleeps mid-round
-- **Voice cues** ("Round 1", "Go", "Rest", countdown warnings, "Session complete") played from pre-generated audio clips — no janky in-browser text-to-speech, works identically on every device
-- **Wake Lock** keeps the screen on during a session; **vibration** pulses on phase changes (Android)
+- **Voice cues** ("Round 1", "Go", "Rest", a spoken 4-3-2-1 countdown near round end, "Session complete") from pre-generated audio clips — no janky in-browser text-to-speech, identical on every device — plus a synthesized bell chime at the exact moment each round ends
+- **Timer ring** glows and grows subtly as a round's warning window closes in
+- **Session history**: a streak counter and per-session log (rounds completed, duration) saved locally, viewable from the setup screen
+- **Wake Lock** keeps the screen on during a session; **vibration** pulses on phase changes (Android); optional live clock readout
 - **Keyboard shortcuts** for laptop use — `space` start/pause, `r` reset, `s` / `→` skip
 - **Installable PWA** — works offline, installs to your home screen on iOS/Android/desktop
 - Accessible: ARIA live region announces phase changes for screen readers

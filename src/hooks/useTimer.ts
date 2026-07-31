@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks'
 import {
   resolveGetReadyTickClipId,
   resolveRoundClipId,
+  resolveRoundEndTickClipId,
   resolveWarningClipId,
 } from '../lib/audioClips'
 import { createInitialState, isWarningWindow, progressRatio, reduceTimer, remainingMs } from '../lib/timerEngine'
@@ -19,9 +20,9 @@ export function useTimer(config: TimerConfig, muted: boolean) {
   const prevPhaseRef = useRef(state.phase)
   const prevRoundRef = useRef(state.currentRound)
   const announcedWarningRef = useRef(false)
-  const announcedGetReadyTickRef = useRef<number | null>(null)
+  const announcedTickRef = useRef<number | null>(null)
 
-  const { unlock, playClip } = useAudioPlayer(muted)
+  const { unlock, playClip, playBell } = useAudioPlayer(muted)
   const wakeLock = useWakeLock()
   const vibrate = useVibration()
 
@@ -78,38 +79,51 @@ export function useTimer(config: TimerConfig, muted: boolean) {
           vibrate(80)
           break
         case 'rest':
+          // `rest` is only ever entered right after a round ends.
+          playBell()
           playClip('rest')
           vibrate([80, 60, 80])
           break
         case 'finished':
+          // Likewise, `finished` is only reached right after the last round ends.
+          playBell()
           playClip('complete')
           vibrate([120, 80, 120, 80, 120])
           void wakeLock.release()
           break
       }
       announcedWarningRef.current = false
-      announcedGetReadyTickRef.current = null
+      announcedTickRef.current = null
       prevPhaseRef.current = state.phase
       prevRoundRef.current = state.currentRound
     }
-  }, [state.phase, state.currentRound, playClip, vibrate, wakeLock])
+  }, [state.phase, state.currentRound, playClip, playBell, vibrate, wakeLock])
 
   // Sub-phase cues that depend on continuously elapsing time: get-ready
-  // countdown ticks and the once-per-round warning announcement.
+  // countdown ticks, the round-end 4-3-2-1 countdown, and the once-per-round
+  // warning announcement.
   useEffect(() => {
     const now = Date.now()
     if (state.phase === 'getReady') {
       const secondsLeft = Math.ceil(remainingMs(state, now) / 1000)
       const clipId = resolveGetReadyTickClipId(secondsLeft)
-      if (clipId && announcedGetReadyTickRef.current !== secondsLeft) {
-        announcedGetReadyTickRef.current = secondsLeft
+      if (clipId && announcedTickRef.current !== secondsLeft) {
+        announcedTickRef.current = secondsLeft
         playClip(clipId)
       }
     }
-    if (state.phase === 'round' && isWarningWindow(state, now) && !announcedWarningRef.current) {
-      announcedWarningRef.current = true
-      playClip(resolveWarningClipId(state.config.warningSeconds))
-      vibrate(60)
+    if (state.phase === 'round') {
+      const secondsLeft = Math.ceil(remainingMs(state, now) / 1000)
+      const tickClipId = resolveRoundEndTickClipId(secondsLeft)
+      if (tickClipId && announcedTickRef.current !== secondsLeft) {
+        announcedTickRef.current = secondsLeft
+        playClip(tickClipId)
+      }
+      if (isWarningWindow(state, now) && !announcedWarningRef.current) {
+        announcedWarningRef.current = true
+        playClip(resolveWarningClipId(state.config.warningSeconds))
+        vibrate(60)
+      }
     }
     // clockTick isn't read, only used to re-run this effect on each tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps

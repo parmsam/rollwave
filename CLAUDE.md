@@ -19,7 +19,11 @@ If you need to change how phases flow (e.g. add a phase), edit `nextPhaseAfter()
 
 **`hooks/useTimer.ts`** wraps the engine: owns the rAF loop, `visibilitychange` catch-up, and — critically — keeps all side effects (audio, vibration) in `useEffect`s that diff `(phase, currentRound)`, never inside the pure reducer.
 
-**Settings**: `hooks/useSettings.ts` composes `useLocalStorage` for the selected preset, the custom config (versioned envelope — see `SCHEMA_VERSION`, bump and handle migration there if the `TimerConfig` shape ever changes), and mute state. Presets live in `src/lib/presets.ts`.
+**Settings**: `hooks/useSettings.ts` composes `useLocalStorage` for the selected preset id, a **list** of user-saved custom presets (versioned envelope — see `SCHEMA_VERSION`, bump and handle migration there if `TimerConfig`'s shape ever changes), mute state, and the live-clock toggle. Built-in presets live in `src/lib/presets.ts` (`PRESETS`, 4 of them including "Open Mat"); user-created ones are named, edited in place (autosave on every Stepper/checkbox change — no separate "Save" step), and persisted indefinitely until deleted.
+
+**Unlimited rounds**: `TimerConfig.unlimited` (used by the "Open Mat" preset and available as a checkbox on any custom preset) makes `nextPhaseAfter()` in `timerEngine.ts` loop `round → rest → round → …` forever, ignoring `rounds`. The only way out is a manual Reset. `PhaseIndicator`/`TimerDisplay` special-case `unlimited` to show "Round N · unlimited" instead of "N of rounds" + dots.
+
+**History**: `lib/history.ts` (`SessionRecord`, `computeStats`/streak logic) + `hooks/useHistory.ts` (localStorage, capped at 200 records) + `components/StatsView.tsx`. `app.tsx` logs a session in two places: the `finished`-phase effect (full completion) and `handleReset()` (partial credit via `completedRoundsForPartialReset()` in `timerEngine.ts` — mid-`round` credits `currentRound - 1`, mid-`rest`/`finished` credits `currentRound` itself, since `rest` only ever follows a fully-finished round). The streak counter counts distinct calendar days with ≥1 logged session, and doesn't break just because *today* hasn't happened yet (see `computeStreak` in `lib/history.ts`).
 
 ## Audio
 
@@ -33,6 +37,9 @@ Voice cues are **pre-generated, not spoken at runtime**. Runtime `Web Speech API
   It's idempotent (skips existing files; pass `--force` to regenerate everything). **This never runs in CI** — the generated mp3s are committed, so the deployed app has zero runtime API dependency.
 - `hooks/useAudioPlayer.ts` decodes all clips into `AudioBuffer`s via the Web Audio API. The `AudioContext` is created/resumed inside the Start button's click handler specifically — mobile browsers require a user gesture to unlock audio, and this is the one guaranteed gesture in the flow.
 - If a clip file is missing (e.g. you haven't run `generate:audio` yet), playback for that cue just silently no-ops — the app is fully usable without any audio assets present.
+- **Clips never overlap**: `playClip()` tracks the currently-playing `AudioBufferSourceNode` in a ref and `.stop()`s it before starting the next one (voice cues are sequential announcements, not a layered soundscape). Found this the hard way — the get-ready countdown's "one" was bleeding into the round-start "Go" before this fix.
+- **Round-end bell**: `playBell()` in `useAudioPlayer.ts` is a synthesized 3-partial chime (Web Audio oscillators + a gain envelope, no asset file) fired in `useTimer.ts` whenever `rest` or `finished` is entered — both only ever happen right after a round ends, so no extra "did a round just end" check is needed. It's on its own gain node, not routed through the stop-previous-clip mechanism, so it layers under the voice cue instead of being cut off by it.
+- **Round-end 4-3-2-1 countdown**: `resolveRoundEndTickClipId()` in `audioClips.ts` reuses the `four`/`three`/`two`/`one` clips (deliberately skips `five` — it'd double up with a custom 5s warning threshold's "5 seconds" clip). Fires alongside the existing single warningSeconds-threshold callout, not instead of it.
 
 ## Icons / branding
 

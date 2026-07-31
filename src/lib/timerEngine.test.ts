@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialState, isWarningWindow, reduceTimer, remainingMs } from './timerEngine'
+import { completedRoundsForPartialReset, createInitialState, isWarningWindow, reduceTimer, remainingMs } from './timerEngine'
 import type { TimerConfig } from './types'
 
 const baseConfig: TimerConfig = {
@@ -150,5 +150,47 @@ describe('reduceTimer', () => {
     const state = reduceTimer(createInitialState(baseConfig), { type: 'START' }, T0)
     expect(state.phase).toBe('getReady')
     expect(isWarningWindow(state, T0 + 2_900)).toBe(false)
+  })
+
+  it('unlimited mode never reaches finished — round N+1 keeps following rest N', () => {
+    const config = withConfig({ getReadySeconds: 0, rounds: 2, unlimited: true })
+    let state = reduceTimer(createInitialState(config), { type: 'START' }, T0)
+
+    // Walk well past what would be the "last" round in a rounds:2 config.
+    for (let i = 0; i < 6; i++) {
+      state = reduceTimer(state, { type: 'SKIP' }, T0 + i * 1_000)
+    }
+
+    expect(state.phase).not.toBe('finished')
+    expect(state.currentRound).toBeGreaterThan(2)
+  })
+
+  it('unlimited mode fast-forwards through many rounds without getting stuck', () => {
+    const config = withConfig({ getReadySeconds: 0, rounds: 1, roundSeconds: 10, restSeconds: 5, unlimited: true })
+    const start = reduceTimer(createInitialState(config), { type: 'START' }, T0)
+
+    // 10 full round+rest cycles' worth of elapsed time.
+    const later = T0 + 10 * (10_000 + 5_000)
+    const caughtUp = reduceTimer(start, { type: 'TICK' }, later)
+
+    expect(caughtUp.phase).not.toBe('finished')
+    expect(caughtUp.currentRound).toBe(11)
+  })
+})
+
+describe('completedRoundsForPartialReset', () => {
+  it('credits nothing while idle or getting ready', () => {
+    expect(completedRoundsForPartialReset('idle', 0)).toBe(0)
+    expect(completedRoundsForPartialReset('getReady', 1)).toBe(0)
+  })
+
+  it('credits the round in progress minus one when reset mid-round', () => {
+    expect(completedRoundsForPartialReset('round', 3)).toBe(2)
+    expect(completedRoundsForPartialReset('round', 1)).toBe(0)
+  })
+
+  it('credits the current round fully during rest (it already finished) or finished', () => {
+    expect(completedRoundsForPartialReset('rest', 2)).toBe(2)
+    expect(completedRoundsForPartialReset('finished', 5)).toBe(5)
   })
 })

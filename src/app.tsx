@@ -1,32 +1,98 @@
-import { useMemo } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { AriaLiveRegion } from './components/AriaLiveRegion'
 import { Controls } from './components/Controls'
 import { InstallPrompt } from './components/InstallPrompt'
+import { LiveClock } from './components/LiveClock'
 import { PhaseIndicator } from './components/PhaseIndicator'
 import { PresetPicker } from './components/PresetPicker'
+import { StatsView } from './components/StatsView'
 import { TimerDisplay } from './components/TimerDisplay'
 import { VolumeToggle } from './components/VolumeToggle'
+import { useHistory } from './hooks/useHistory'
 import { useSettings } from './hooks/useSettings'
 import { useTimer } from './hooks/useTimer'
+import { completedRoundsForPartialReset } from './lib/timerEngine'
 import { phaseLabel } from './lib/format'
+import type { SessionRecord } from './lib/history'
+
+interface ActiveSession {
+  startedAt: number
+  logged: boolean
+}
 
 export function App() {
   const {
     selectedPresetId,
     setSelectedPresetId,
-    customConfig,
-    setCustomConfig,
+    customPresets,
     activeConfig,
     muted,
     setMuted,
+    showClock,
+    setShowClock,
+    addCustomPreset,
+    updateCustomPreset,
+    deleteCustomPreset,
   } = useSettings()
   const { state, remainingMs, progressRatio, isWarning, actions } = useTimer(activeConfig, muted)
+  const { sessions, addSession, clearHistory, stats } = useHistory()
+
+  const [view, setView] = useState<'setup' | 'history'>('setup')
+  const sessionRef = useRef<ActiveSession | null>(null)
+
+  // Track when an active session started, for totalActiveMs in the history log.
+  useEffect(() => {
+    if (state.phase === 'idle') {
+      sessionRef.current = null
+    } else if (!sessionRef.current) {
+      sessionRef.current = { startedAt: Date.now(), logged: false }
+    }
+  }, [state.phase])
+
+  // Log a completed session the moment a session naturally finishes.
+  useEffect(() => {
+    if (state.phase === 'finished' && sessionRef.current && !sessionRef.current.logged) {
+      sessionRef.current.logged = true
+      addSession({
+        id: crypto.randomUUID(),
+        completedAt: Date.now(),
+        presetLabel: state.config.label,
+        roundsCompleted: state.config.rounds,
+        totalRounds: state.config.rounds,
+        unlimited: Boolean(state.config.unlimited),
+        totalActiveMs: Date.now() - sessionRef.current.startedAt,
+      })
+    }
+  }, [state.phase, state.config, addSession])
+
+  function handleReset() {
+    const active = sessionRef.current
+    if (active && !active.logged && state.phase !== 'idle') {
+      const roundsCompleted = completedRoundsForPartialReset(state.phase, state.currentRound)
+      if (roundsCompleted > 0) {
+        const record: SessionRecord = {
+          id: crypto.randomUUID(),
+          completedAt: Date.now(),
+          presetLabel: state.config.label,
+          roundsCompleted,
+          totalRounds: state.config.rounds,
+          unlimited: Boolean(state.config.unlimited),
+          totalActiveMs: Date.now() - active.startedAt,
+        }
+        addSession(record)
+      }
+    }
+    sessionRef.current = null
+    actions.reset()
+  }
 
   const announcement = useMemo(() => {
     if (state.phase === 'idle') return ''
     if (state.phase === 'finished') return 'Session complete. Great work.'
-    return `${phaseLabel(state.phase)}, round ${state.currentRound} of ${state.config.rounds}`
-  }, [state.phase, state.currentRound, state.config.rounds])
+    return `${phaseLabel(state.phase)}, round ${state.currentRound}${
+      state.config.unlimited ? '' : ` of ${state.config.rounds}`
+    }`
+  }, [state.phase, state.currentRound, state.config.rounds, state.config.unlimited])
 
   const isSetup = state.phase === 'idle'
 
@@ -38,25 +104,56 @@ export function App() {
         <div className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="h-8 w-8" />
           <span className="text-lg font-bold tracking-widest">ROLLWAVE</span>
+          {stats.currentStreak > 0 && (
+            <span className="ml-1 text-sm text-white/50" title={`${stats.currentStreak}-day streak`}>
+              {stats.currentStreak}🔥
+            </span>
+          )}
         </div>
-        <VolumeToggle muted={muted} onToggle={() => setMuted((prev) => !prev)} />
+        <div className="flex items-center gap-2">
+          {showClock && <LiveClock />}
+          {isSetup && (
+            <button
+              type="button"
+              onClick={() => setView((v) => (v === 'history' ? 'setup' : 'history'))}
+              aria-label={view === 'history' ? 'Back to timer setup' : 'View training history'}
+              className="rounded-full border border-white/15 p-2.5 text-lg text-white/70 transition hover:text-white active:scale-95"
+            >
+              {view === 'history' ? '⏱️' : '📊'}
+            </button>
+          )}
+          <VolumeToggle muted={muted} onToggle={() => setMuted((prev) => !prev)} />
+        </div>
       </header>
 
-      {isSetup ? (
+      {isSetup && view === 'history' ? (
+        <StatsView stats={stats} sessions={sessions} onClose={() => setView('setup')} onClear={clearHistory} />
+      ) : isSetup ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-8">
           <PresetPicker
             selectedPresetId={selectedPresetId}
-            customConfig={customConfig}
+            customPresets={customPresets}
             onSelectPreset={setSelectedPresetId}
-            onChangeCustom={setCustomConfig}
+            onAddCustom={addCustomPreset}
+            onUpdateCustom={updateCustomPreset}
+            onDeleteCustom={deleteCustomPreset}
           />
           <Controls
             phase={state.phase}
             isPaused={state.isPaused}
             onToggleStartPause={actions.toggleStartPause}
-            onReset={actions.reset}
+            onReset={handleReset}
             onSkip={actions.skip}
           />
+          <label className="flex items-center gap-2 text-xs text-white/40">
+            <input
+              type="checkbox"
+              checked={showClock}
+              onChange={(event) => setShowClock((event.target as HTMLInputElement).checked)}
+              className="h-3.5 w-3.5 accent-accent"
+            />
+            Show live clock
+          </label>
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-10">
@@ -66,13 +163,19 @@ export function App() {
             remainingMs={remainingMs}
             progressRatio={progressRatio}
             isWarning={isWarning}
+            warningSeconds={state.config.warningSeconds}
           />
-          <PhaseIndicator currentRound={state.currentRound} totalRounds={state.config.rounds} phase={state.phase} />
+          <PhaseIndicator
+            currentRound={state.currentRound}
+            totalRounds={state.config.rounds}
+            phase={state.phase}
+            unlimited={Boolean(state.config.unlimited)}
+          />
           <Controls
             phase={state.phase}
             isPaused={state.isPaused}
             onToggleStartPause={actions.toggleStartPause}
-            onReset={actions.reset}
+            onReset={handleReset}
             onSkip={actions.skip}
           />
         </div>

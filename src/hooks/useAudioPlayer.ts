@@ -8,6 +8,7 @@ export function useAudioPlayer(muted: boolean) {
   const ctxRef = useRef<AudioContext | null>(null)
   const buffersRef = useRef<Map<string, AudioBuffer>>(new Map())
   const loadingRef = useRef(false)
+  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
 
   const ensureContext = useCallback((): AudioContext | null => {
     if (!ctxRef.current) {
@@ -54,13 +55,49 @@ export function useAudioPlayer(muted: boolean) {
       const ctx = ctxRef.current
       const buffer = buffersRef.current.get(id)
       if (!ctx || !buffer) return
+
+      // Cues are sequential announcements, never a layered soundscape — cut
+      // off whatever's still playing so back-to-back clips (e.g. the
+      // get-ready countdown's "one" bleeding into the round-start "Go")
+      // never overlap.
+      try {
+        currentSourceRef.current?.stop()
+      } catch {
+        // already stopped/ended — ignore
+      }
+
       const source = ctx.createBufferSource()
       source.buffer = buffer
       source.connect(ctx.destination)
       source.start()
+      currentSourceRef.current = source
     },
     [muted],
   )
+
+  // Short synthesized bell chime for "round just ended" — no audio asset
+  // needed, and it's layered on its own gain node rather than routed through
+  // currentSourceRef, so it never gets cut short by the next voice cue.
+  const playBell = useCallback(() => {
+    if (muted) return
+    const ctx = ctxRef.current
+    if (!ctx) return
+    const now = ctx.currentTime
+    const gain = ctx.createGain()
+    gain.connect(ctx.destination)
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.5, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9)
+
+    for (const freq of [880, 1320, 1760]) {
+      const osc = ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      osc.connect(gain)
+      osc.start(now)
+      osc.stop(now + 0.9)
+    }
+  }, [muted])
 
   useEffect(() => {
     return () => {
@@ -68,5 +105,5 @@ export function useAudioPlayer(muted: boolean) {
     }
   }, [])
 
-  return { unlock, playClip }
+  return { unlock, playClip, playBell }
 }

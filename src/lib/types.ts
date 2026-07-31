@@ -1,6 +1,7 @@
 export type Phase = 'idle' | 'getReady' | 'round' | 'rest' | 'finished'
 
-export type PresetId = 'competition' | 'drilling' | 'flowRolling' | 'custom'
+/** Built-in presets use fixed ids; saved custom presets get a generated string id. */
+export type PresetId = string
 
 export interface TimerConfig {
   id: PresetId
@@ -10,6 +11,8 @@ export interface TimerConfig {
   restSeconds: number
   getReadySeconds: number
   warningSeconds: number
+  /** When true, rounds repeat indefinitely (until Reset) and `rounds` is ignored. */
+  unlimited?: boolean
 }
 
 export interface TimerState {

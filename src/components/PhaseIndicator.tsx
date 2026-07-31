@@ -4,10 +4,19 @@ interface Props {
   currentRound: number
   totalRounds: number
   phase: Phase
+  unlimited: boolean
 }
 
-export function PhaseIndicator({ currentRound, totalRounds, phase }: Props) {
+export function PhaseIndicator({ currentRound, totalRounds, phase, unlimited }: Props) {
   if (phase === 'idle') return null
+
+  if (unlimited) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-sm text-white/60">Round {currentRound} · unlimited</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center gap-2">

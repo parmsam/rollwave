@@ -44,9 +44,22 @@ export function resolveWarningClipId(thresholdSeconds: number): string {
   return WARNING_THRESHOLDS.includes(thresholdSeconds) ? `warning-${thresholdSeconds}` : 'warning-generic'
 }
 
+const TICK_WORDS = ['one', 'two', 'three', 'four', 'five']
+
+function tickClipId(secondsRemaining: number, maxSeconds: number): string | null {
+  return secondsRemaining >= 1 && secondsRemaining <= maxSeconds ? TICK_WORDS[secondsRemaining - 1] : null
+}
+
 /** get-ready countdown clips only exist for the last 5 seconds. */
 export function resolveGetReadyTickClipId(secondsRemaining: number): string | null {
-  return secondsRemaining >= 1 && secondsRemaining <= 5
-    ? (['one', 'two', 'three', 'four', 'five'][secondsRemaining - 1] ?? null)
-    : null
+  return tickClipId(secondsRemaining, 5)
+}
+
+/**
+ * Spoken 4-3-2-1 countdown near the end of a round. Deliberately stops at 4
+ * (not 5) — a custom warning threshold of 5s would otherwise double up with
+ * this, playing "5 seconds" and "five" back to back.
+ */
+export function resolveRoundEndTickClipId(secondsRemaining: number): string | null {
+  return tickClipId(secondsRemaining, 4)
 }

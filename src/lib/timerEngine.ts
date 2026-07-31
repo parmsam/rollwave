@@ -52,7 +52,7 @@ function nextPhaseAfter(
     case 'getReady':
       return { phase: 'round', currentRound: currentRound || 1 }
     case 'round':
-      return currentRound < config.rounds
+      return config.unlimited || currentRound < config.rounds
         ? { phase: 'rest', currentRound }
         : { phase: 'finished', currentRound }
     case 'rest':
@@ -142,4 +142,23 @@ export function progressRatio(state: TimerState, now: number): number {
 export function isWarningWindow(state: TimerState, now: number): boolean {
   if (state.phase !== 'round') return false
   return remainingMs(state, now) <= state.config.warningSeconds * 1000
+}
+
+/**
+ * How many rounds to credit when a session ends early (manual Reset) rather
+ * than via natural completion. `rest` only ever follows a fully-finished
+ * round, so `currentRound` itself is complete; mid-`round` credits the round
+ * before it.
+ */
+export function completedRoundsForPartialReset(phase: Phase, currentRound: number): number {
+  switch (phase) {
+    case 'idle':
+    case 'getReady':
+      return 0
+    case 'round':
+      return Math.max(currentRound - 1, 0)
+    case 'rest':
+    case 'finished':
+      return currentRound
+  }
 }

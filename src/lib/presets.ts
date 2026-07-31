@@ -28,18 +28,27 @@ export const PRESETS: TimerConfig[] = [
     getReadySeconds: 3,
     warningSeconds: 10,
   },
+  {
+    id: 'openMat',
+    label: 'Open Mat',
+    rounds: 1,
+    roundSeconds: 300,
+    restSeconds: 60,
+    getReadySeconds: 3,
+    warningSeconds: 10,
+    unlimited: true,
+  },
 ]
 
-export const DEFAULT_CUSTOM_CONFIG: TimerConfig = {
-  id: 'custom',
-  label: 'Custom',
-  rounds: 5,
-  roundSeconds: 300,
-  restSeconds: 60,
-  getReadySeconds: 3,
-  warningSeconds: 10,
-}
-
-export function findPreset(id: string): TimerConfig | undefined {
-  return PRESETS.find((preset) => preset.id === id)
+/** A fresh, user-nameable custom preset — saved into settings and revisited later. */
+export function createCustomPreset(index: number): TimerConfig {
+  return {
+    id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    label: `Custom ${index}`,
+    rounds: 5,
+    roundSeconds: 300,
+    restSeconds: 60,
+    getReadySeconds: 3,
+    warningSeconds: 10,
+  }
 }
