@@ -161,11 +161,54 @@ export function useAudioPlayer(voice: string, muted: boolean) {
     }
   }, [muted])
 
+  // Two quick percussive noise bursts — a synthesized "clapper" for the
+  // warning threshold, modeled on the double wooden-clapper signal used to
+  // mark 10 seconds left in combat sports. Noise-based (band-passed white
+  // noise), not oscillator tones like the bell/chime, so all three cues
+  // (start/warning/end) are distinct in *timbre*, not just pitch.
+  const playWarningClap = useCallback(() => {
+    if (muted) return
+    const ctx = ctxRef.current
+    if (!ctx) return
+
+    const playClap = (startTime: number) => {
+      const duration = 0.08
+      const bufferSize = Math.floor(ctx.sampleRate * duration)
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1
+      }
+      const noise = ctx.createBufferSource()
+      noise.buffer = buffer
+
+      const bandpass = ctx.createBiquadFilter()
+      bandpass.type = 'bandpass'
+      bandpass.frequency.value = 1800
+      bandpass.Q.value = 0.9
+
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(0.0001, startTime)
+      gain.gain.exponentialRampToValueAtTime(0.9, startTime + 0.004)
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+      noise.connect(bandpass)
+      bandpass.connect(gain)
+      gain.connect(ctx.destination)
+      noise.start(startTime)
+      noise.stop(startTime + duration + 0.02)
+    }
+
+    const now = ctx.currentTime
+    playClap(now)
+    playClap(now + 0.14)
+  }, [muted])
+
   useEffect(() => {
     return () => {
       void ctxRef.current?.close()
     }
   }, [])
 
-  return { unlock, playClip, playBell, playStartChime }
+  return { unlock, playClip, playBell, playStartChime, playWarningClap }
 }

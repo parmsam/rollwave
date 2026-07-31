@@ -14,7 +14,7 @@
 
 - **Presets** for Competition, Drilling, Flow Rolling, and Open Mat (unlimited rounds — keeps going until you stop it), plus unlimited named **custom modes** you create, edit, and revisit later
 - **Drift-free timer engine** — stays accurate even if the tab is backgrounded or the phone sleeps mid-round
-- **Voice cues** ("Round 1", "Go", "Rest", a spoken 4-3-2-1 countdown near round end, "Session complete") from pre-generated audio clips — no janky in-browser text-to-speech, identical on every device — plus a bright chime as each round starts and a deep bell as it ends. Pick from 3 distinct voices (Onyx, Nova, Fable) on the setup screen
+- **Voice cues** ("Round 1", "Go", "Rest", a spoken 4-3-2-1 countdown near round end, "Session complete") from pre-generated audio clips — no janky in-browser text-to-speech, identical on every device — plus a bright chime as each round starts, a deep bell as it ends, and a double-clap warning (round *and* rest) 10 seconds before time's up. Pick from 3 distinct voices (Onyx, Nova, Fable) on the setup screen
 - **Timer ring** drains from a full, bold arc down to empty as each phase elapses, iOS Clock–style
 - **Light and dark mode**, following your system preference by default with a manual Auto/Light/Dark override on the setup screen
 - **Session history**: a streak counter and per-session log (rounds completed, duration) saved locally, viewable from the setup screen

@@ -23,7 +23,7 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
   const announcedWarningRef = useRef(false)
   const announcedTickRef = useRef<number | null>(null)
 
-  const { unlock, playClip, playBell, playStartChime } = useAudioPlayer(voice, muted)
+  const { unlock, playClip, playBell, playStartChime, playWarningClap } = useAudioPlayer(voice, muted)
   const wakeLock = useWakeLock()
   const vibrate = useVibration()
   const pendingRoundVoiceRef = useRef<number | null>(null)
@@ -143,8 +143,13 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
         announcedTickRef.current = secondsLeft
         playClip(tickClipId)
       }
+    }
+    // Same shared "this interval is ending" cue for both round and rest —
+    // most interval timers don't distinguish the two, so neither do we.
+    if (state.phase === 'round' || state.phase === 'rest') {
       if (isWarningWindow(state, now) && !announcedWarningRef.current) {
         announcedWarningRef.current = true
+        playWarningClap()
         playClip(resolveWarningClipId(state.config.warningSeconds))
         vibrate(60)
       }
@@ -155,7 +160,7 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
     // at an actual phase/round transition — so mid-phase, none of these
     // ticks/warnings would ever fire at all.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, playClip, vibrate, clockTick])
+  }, [state, playClip, playWarningClap, vibrate, clockTick])
 
   const start = useCallback(() => {
     unlock()

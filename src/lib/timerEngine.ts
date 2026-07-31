@@ -139,8 +139,13 @@ export function progressRatio(state: TimerState, now: number): number {
   return 1 - remainingMs(state, now) / total
 }
 
+/**
+ * True in the final `warningSeconds` of a round OR a rest period — most
+ * interval timers use one shared "this interval is ending" cue for both
+ * work and rest, rather than a separate concept for each, so we do too.
+ */
 export function isWarningWindow(state: TimerState, now: number): boolean {
-  if (state.phase !== 'round') return false
+  if (state.phase !== 'round' && state.phase !== 'rest') return false
   return remainingMs(state, now) <= state.config.warningSeconds * 1000
 }
 

@@ -15,7 +15,8 @@ const TRACK_STROKE = 6
 const ARC_STROKE = 20
 
 function ringColor(phase: Phase, isWarning: boolean): string {
-  if (phase === 'round') return isWarning ? 'var(--color-warn)' : 'var(--color-accent)'
+  if (isWarning && (phase === 'round' || phase === 'rest')) return 'var(--color-warn)'
+  if (phase === 'round') return 'var(--color-accent)'
   if (phase === 'rest') return 'var(--color-rest)'
   if (phase === 'getReady') return 'var(--color-accent-2)'
   return 'var(--color-round)'

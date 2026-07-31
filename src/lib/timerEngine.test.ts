@@ -146,10 +146,20 @@ describe('reduceTimer', () => {
     expect(isWarningWindow(state, T0 + 9_999)).toBe(true) // ~1ms left
   })
 
-  it('is not in a warning window during rest or getReady', () => {
+  it('is not in a warning window during getReady', () => {
     const state = reduceTimer(createInitialState(baseConfig), { type: 'START' }, T0)
     expect(state.phase).toBe('getReady')
     expect(isWarningWindow(state, T0 + 2_900)).toBe(false)
+  })
+
+  it('also reports the warning window in the final N seconds of rest — same shared cue as the round', () => {
+    const config = withConfig({ getReadySeconds: 0, roundSeconds: 10, restSeconds: 10, warningSeconds: 3 })
+    let state = reduceTimer(createInitialState(config), { type: 'START' }, T0)
+    state = reduceTimer(state, { type: 'SKIP' }, T0 + 10_000) // into rest
+    expect(state.phase).toBe('rest')
+
+    expect(isWarningWindow(state, T0 + 10_000 + 1_000)).toBe(false) // 9s left in rest
+    expect(isWarningWindow(state, T0 + 10_000 + 7_000)).toBe(true) // 3s left in rest
   })
 
   it('unlimited mode never reaches finished — round N+1 keeps following rest N', () => {
