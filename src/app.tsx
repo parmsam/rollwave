@@ -101,7 +101,9 @@ export function App() {
   const isSetup = state.phase === 'idle'
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center px-6 py-10">
+    <div
+      className={`mx-auto flex min-h-screen flex-col items-center px-6 py-10 ${isSetup ? 'max-w-lg' : 'max-w-4xl'}`}
+    >
       <AriaLiveRegion message={announcement} />
 
       <header className="mb-8 flex w-full items-center justify-between">
@@ -109,7 +111,7 @@ export function App() {
           type="button"
           onClick={() => setView('setup')}
           aria-label="Go to setup"
-          className="flex items-center gap-2 transition active:scale-95"
+          className="-mx-2 -my-1 flex items-center gap-2 rounded-xl px-2 py-1 transition active:scale-95 active:bg-accent/20 active:text-round"
         >
           <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="h-8 w-8" />
           <span className="text-lg font-bold tracking-widest">ROLLWAVE</span>
@@ -126,7 +128,7 @@ export function App() {
               type="button"
               onClick={() => setView((v) => (v === 'history' ? 'setup' : 'history'))}
               aria-label={view === 'history' ? 'Back to timer setup' : 'View training history'}
-              className="rounded-full border border-white/15 p-2.5 text-lg text-white/70 transition hover:text-white active:scale-95"
+              className="rounded-full border border-white/15 p-2.5 text-lg text-white/70 transition hover:text-white active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round"
             >
               {view === 'history' ? '⏱️' : '📊'}
             </button>

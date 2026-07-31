@@ -44,7 +44,7 @@ export function PresetPicker({
         <button
           type="button"
           onClick={onAddCustom}
-          className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-left text-white/60 transition hover:border-white/40 hover:text-white/80 sm:col-span-2"
+          className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-left text-white/60 transition hover:border-white/40 hover:text-white/80 active:scale-[0.98] active:border-accent/60 active:bg-accent/10 active:text-round sm:col-span-2"
         >
           + New custom mode
         </button>
@@ -67,7 +67,7 @@ export function PresetPicker({
               type="button"
               onClick={() => onDeleteCustom(selectedCustom.id)}
               aria-label="Delete this custom mode"
-              className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/50 transition hover:border-warn/50 hover:text-warn"
+              className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/50 transition hover:border-warn/50 hover:text-warn active:scale-95 active:border-warn/60 active:bg-warn/20 active:text-warn"
             >
               Delete
             </button>
@@ -150,7 +150,7 @@ function PresetCard({ preset, selected, onSelect }: PresetCardProps) {
     <button
       type="button"
       onClick={onSelect}
-      className={`rounded-2xl border px-4 py-3 text-left transition ${
+      className={`rounded-2xl border px-4 py-3 text-left transition active:scale-[0.98] active:border-accent/60 active:bg-accent/20 active:text-round ${
         selected ? 'border-accent bg-accent/10 text-round' : 'border-white/10 text-white/70 hover:border-white/25'
       }`}
     >

@@ -17,7 +17,7 @@ export function Stepper({ label, value, step, min, max, onChange, format }: Prop
           type="button"
           onClick={() => onChange(Math.max(min, value - step))}
           aria-label={`Decrease ${label}`}
-          className="h-8 w-8 rounded-full border border-white/15 text-white/80 transition active:scale-95"
+          className="h-8 w-8 rounded-full border border-white/15 text-white/80 transition active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round"
         >
           −
         </button>
@@ -26,7 +26,7 @@ export function Stepper({ label, value, step, min, max, onChange, format }: Prop
           type="button"
           onClick={() => onChange(Math.min(max, value + step))}
           aria-label={`Increase ${label}`}
-          className="h-8 w-8 rounded-full border border-white/15 text-white/80 transition active:scale-95"
+          className="h-8 w-8 rounded-full border border-white/15 text-white/80 transition active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round"
         >
           +
         </button>

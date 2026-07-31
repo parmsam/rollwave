@@ -46,12 +46,16 @@ export function StatsView({ stats, sessions, onClose, onClear }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white/80 transition active:scale-95"
+          className="rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white/80 transition active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round"
         >
           Back
         </button>
         {sessions.length > 0 && (
-          <button type="button" onClick={onClear} className="text-sm text-white/40 underline">
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-lg px-2 py-1 text-sm text-white/40 underline transition active:bg-warn/20 active:text-warn"
+          >
             Clear history
           </button>
         )}
