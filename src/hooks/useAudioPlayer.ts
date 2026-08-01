@@ -25,7 +25,14 @@ export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
       ctxRef.current = new Ctor()
       const gain = ctxRef.current.createGain()
       gain.gain.value = volume
-      gain.connect(ctxRef.current.destination)
+      // Volume can be pushed to 150% to give quiet devices real headroom,
+      // but the warning clap's peak (0.9, see playWarningClap below) is
+      // already close to unity — without a limiter, boosting past 100%
+      // would hard-clip it into an audible crackle. A compressor with
+      // Web Audio's default curve gently limits instead.
+      const compressor = ctxRef.current.createDynamicsCompressor()
+      gain.connect(compressor)
+      compressor.connect(ctxRef.current.destination)
       masterGainRef.current = gain
     }
     if (ctxRef.current.state === 'suspended') {

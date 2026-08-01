@@ -10,10 +10,10 @@ export function VolumeSlider({ volume, onChange }: Props) {
       <input
         type="range"
         min={0}
-        max={100}
+        max={150}
         step={5}
         value={Math.round(volume * 100)}
-        onChange={(event) => onChange(Number((event.target as HTMLInputElement).value) / 100)}
+        onInput={(event) => onChange(Number((event.target as HTMLInputElement).value) / 100)}
         aria-label="Volume"
         className="h-1.5 flex-1 accent-accent"
       />
