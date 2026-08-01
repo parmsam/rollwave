@@ -10,8 +10,13 @@ function formatCompactTime(date: Date): string {
   return `${hours}:${minutes}${meridiem}`
 }
 
+interface Props {
+  /** 'lg' is for standing in as the main readout in BigDigitsDisplay, not the header row. */
+  size?: 'sm' | 'lg'
+}
+
 /** Live wall-clock readout, independent of the timer engine's own rAF loop. */
-export function LiveClock() {
+export function LiveClock({ size = 'sm' }: Props) {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -19,8 +24,12 @@ export function LiveClock() {
     return () => clearInterval(id)
   }, [])
 
+  const sizeClass = size === 'lg' ? 'text-2xl sm:text-3xl lg:text-4xl' : 'text-xs sm:text-sm'
+
   return (
-    <span className="shrink-0 font-mono text-xs whitespace-nowrap text-slate-900/40 tabular-nums sm:text-sm dark:text-white/40">
+    <span
+      className={`shrink-0 font-mono whitespace-nowrap text-slate-900/40 tabular-nums dark:text-white/40 ${sizeClass}`}
+    >
       {formatCompactTime(now)}
     </span>
   )

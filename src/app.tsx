@@ -136,7 +136,7 @@ export function App() {
           )}
         </button>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {showClock && <LiveClock />}
+          {showClock && !(!isSetup && displayStyle === 'digits') && <LiveClock />}
           {isSetup && (
             <button
               type="button"
@@ -196,6 +196,7 @@ export function App() {
               currentRound={state.currentRound}
               remainingMs={remainingMs}
               isWarning={isWarning}
+              showClock={showClock}
             />
           ) : (
             <TimerDisplay
