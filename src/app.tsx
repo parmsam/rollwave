@@ -7,6 +7,7 @@ import { InstallPrompt } from './components/InstallPrompt'
 import { LiveClock } from './components/LiveClock'
 import { PhaseIndicator } from './components/PhaseIndicator'
 import { PresetPicker } from './components/PresetPicker'
+import { SilentModeNotice } from './components/SilentModeNotice'
 import { StatsView } from './components/StatsView'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TimerDisplay } from './components/TimerDisplay'
@@ -152,6 +153,7 @@ export function App() {
         <StatsView stats={stats} sessions={sessions} onClose={() => setView('setup')} onClear={clearHistory} />
       ) : isSetup ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-8">
+          <SilentModeNotice />
           <PresetPicker
             selectedPresetId={selectedPresetId}
             customPresets={customPresets}
