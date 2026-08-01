@@ -14,7 +14,7 @@ import { useWakeLock } from './useWakeLock'
 const TICK_INTERVAL_MS = 250
 const ROUND_START_VOICE_DELAY_MS = 200
 
-export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
+export function useTimer(config: TimerConfig, voice: string, muted: boolean, volume: number) {
   const [state, setState] = useState(() => createInitialState(config))
   const [clockTick, setClockTick] = useState(0)
 
@@ -23,7 +23,7 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean) {
   const announcedWarningRef = useRef(false)
   const announcedTickRef = useRef<number | null>(null)
 
-  const { unlock, playClip, playBell, playStartChime, playWarningClap } = useAudioPlayer(voice, muted)
+  const { unlock, playClip, playBell, playStartChime, playWarningClap } = useAudioPlayer(voice, muted, volume)
   const wakeLock = useWakeLock()
   const vibrate = useVibration()
   const pendingRoundVoiceRef = useRef<number | null>(null)

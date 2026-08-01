@@ -4,8 +4,13 @@ import { AUDIO_CLIPS, clipUrl } from '../lib/audioClips'
 type AudioContextCtor = typeof AudioContext
 
 /** Web Audio buffer cache + playback. Lower latency and safe overlap vs plain <audio> elements. */
-export function useAudioPlayer(voice: string, muted: boolean) {
+export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
   const ctxRef = useRef<AudioContext | null>(null)
+  // Every cue (voice clips + all three synthesized sounds) routes through
+  // this single node instead of ctx.destination directly, so one master
+  // volume setting scales everything uniformly rather than needing a
+  // separate multiplier threaded through each synth function.
+  const masterGainRef = useRef<GainNode | null>(null)
   // Keyed by `${voice}:${id}` so switching voices can't reuse a stale
   // buffer from a different voice, and previously-loaded voices stay
   // cached if the user switches back.
@@ -18,12 +23,26 @@ export function useAudioPlayer(voice: string, muted: boolean) {
         window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioContextCtor }).webkitAudioContext
       if (!Ctor) return null
       ctxRef.current = new Ctor()
+      const gain = ctxRef.current.createGain()
+      gain.gain.value = volume
+      gain.connect(ctxRef.current.destination)
+      masterGainRef.current = gain
     }
     if (ctxRef.current.state === 'suspended') {
       void ctxRef.current.resume()
     }
     return ctxRef.current
-  }, [])
+  }, [volume])
+
+  // Keep the live master gain in sync with the setting — ensureContext's
+  // gain.value = volume assignment above only covers the moment the
+  // AudioContext is first created, so this effect is what makes dragging
+  // the slider audible during an already-running session.
+  useEffect(() => {
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = volume
+    }
+  }, [volume])
 
   const loadAll = useCallback(async () => {
     const ctx = ensureContext()
@@ -63,7 +82,7 @@ export function useAudioPlayer(voice: string, muted: boolean) {
     }
     const source = ctx.createBufferSource()
     source.buffer = buffer
-    source.connect(ctx.destination)
+    source.connect(masterGainRef.current ?? ctx.destination)
     source.start()
     currentSourceRef.current = source
   }, [])
@@ -131,7 +150,7 @@ export function useAudioPlayer(voice: string, muted: boolean) {
       gain.gain.exponentialRampToValueAtTime(peak, now + 0.015)
       gain.gain.exponentialRampToValueAtTime(0.0001, now + decay)
       osc.connect(gain)
-      gain.connect(ctx.destination)
+      gain.connect(masterGainRef.current ?? ctx.destination)
       osc.start(now)
       osc.stop(now + decay + 0.1)
     }
@@ -146,7 +165,7 @@ export function useAudioPlayer(voice: string, muted: boolean) {
     if (!ctx) return
     const now = ctx.currentTime
     const gain = ctx.createGain()
-    gain.connect(ctx.destination)
+    gain.connect(masterGainRef.current ?? ctx.destination)
     gain.gain.setValueAtTime(0.0001, now)
     gain.gain.exponentialRampToValueAtTime(0.4, now + 0.008)
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35)
@@ -194,7 +213,7 @@ export function useAudioPlayer(voice: string, muted: boolean) {
 
       noise.connect(bandpass)
       bandpass.connect(gain)
-      gain.connect(ctx.destination)
+      gain.connect(masterGainRef.current ?? ctx.destination)
       noise.start(startTime)
       noise.stop(startTime + duration + 0.02)
     }

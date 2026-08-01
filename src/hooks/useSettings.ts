@@ -24,6 +24,7 @@ export function useSettings() {
     presets: [],
   })
   const [muted, setMuted] = useLocalStorage('rollwave:muted', false)
+  const [volume, setVolume] = useLocalStorage('rollwave:volume', 1)
   const [showClock, setShowClock] = useLocalStorage('rollwave:showClock', false)
   const [voice, setVoice] = useLocalStorage('rollwave:voice', DEFAULT_VOICE)
   const [displayStyle, setDisplayStyle] = useLocalStorage<DisplayStyle>('rollwave:displayStyle', 'ring')
@@ -72,6 +73,8 @@ export function useSettings() {
     activeConfig,
     muted,
     setMuted,
+    volume,
+    setVolume,
     showClock,
     setShowClock,
     voice,
