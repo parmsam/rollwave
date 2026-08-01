@@ -11,6 +11,8 @@ interface StoredCustomPresets {
   presets: TimerConfig[]
 }
 
+export type DisplayStyle = 'ring' | 'digits'
+
 /** Persisted preset selection, user-saved custom presets, and mute setting. */
 export function useSettings() {
   const [selectedPresetId, setSelectedPresetId] = useLocalStorage<string>(
@@ -24,6 +26,7 @@ export function useSettings() {
   const [muted, setMuted] = useLocalStorage('rollwave:muted', false)
   const [showClock, setShowClock] = useLocalStorage('rollwave:showClock', false)
   const [voice, setVoice] = useLocalStorage('rollwave:voice', DEFAULT_VOICE)
+  const [displayStyle, setDisplayStyle] = useLocalStorage<DisplayStyle>('rollwave:displayStyle', 'ring')
 
   const customPresets = storedCustom.v === SCHEMA_VERSION ? storedCustom.presets : []
 
@@ -73,6 +76,8 @@ export function useSettings() {
     setShowClock,
     voice,
     setVoice,
+    displayStyle,
+    setDisplayStyle,
     addCustomPreset,
     updateCustomPreset,
     deleteCustomPreset,

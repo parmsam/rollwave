@@ -1,4 +1,4 @@
-import { formatTime, phaseLabel } from '../lib/format'
+import { formatTime, phaseColor, phaseLabel } from '../lib/format'
 import type { Phase } from '../lib/types'
 
 interface Props {
@@ -14,16 +14,8 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 const TRACK_STROKE = 6
 const ARC_STROKE = 20
 
-function ringColor(phase: Phase, isWarning: boolean): string {
-  if (isWarning && (phase === 'round' || phase === 'rest')) return 'var(--color-warn)'
-  if (phase === 'round') return 'var(--color-accent)'
-  if (phase === 'rest') return 'var(--color-rest)'
-  if (phase === 'getReady') return 'var(--color-accent-2)'
-  return 'var(--color-round)'
-}
-
 export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, isWarning }: Props) {
-  const color = ringColor(phase, isWarning)
+  const color = phaseColor(phase, isWarning)
   const clampedProgress = Math.min(Math.max(progressRatio, 0), 1)
   // Starts as a full, bold arc and drains away as time elapses (0 = full
   // ring visible, CIRCUMFERENCE = fully drained) — same convention as the

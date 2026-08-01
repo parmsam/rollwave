@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { AriaLiveRegion } from './components/AriaLiveRegion'
+import { BigDigitsDisplay } from './components/BigDigitsDisplay'
 import { Controls } from './components/Controls'
+import { DisplayStyleToggle } from './components/DisplayStyleToggle'
 import { FullscreenToggle } from './components/FullscreenToggle'
 import { GitHubLink } from './components/GitHubLink'
 import { InstallPrompt } from './components/InstallPrompt'
@@ -39,6 +41,8 @@ export function App() {
     setShowClock,
     voice,
     setVoice,
+    displayStyle,
+    setDisplayStyle,
     addCustomPreset,
     updateCustomPreset,
     deleteCustomPreset,
@@ -181,17 +185,27 @@ export function App() {
             </label>
             <ThemeToggle preference={theme.preference} onChange={theme.setPreference} />
             <VoicePicker voice={voice} onChange={setVoice} />
+            <DisplayStyleToggle style={displayStyle} onChange={setDisplayStyle} />
           </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-10">
-          <TimerDisplay
-            phase={state.phase}
-            currentRound={state.currentRound}
-            remainingMs={remainingMs}
-            progressRatio={progressRatio}
-            isWarning={isWarning}
-          />
+          {displayStyle === 'digits' ? (
+            <BigDigitsDisplay
+              phase={state.phase}
+              currentRound={state.currentRound}
+              remainingMs={remainingMs}
+              isWarning={isWarning}
+            />
+          ) : (
+            <TimerDisplay
+              phase={state.phase}
+              currentRound={state.currentRound}
+              remainingMs={remainingMs}
+              progressRatio={progressRatio}
+              isWarning={isWarning}
+            />
+          )}
           <PhaseIndicator
             currentRound={state.currentRound}
             totalRounds={state.config.rounds}
