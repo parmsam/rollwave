@@ -10,7 +10,7 @@ export function VolumeSlider({ volume, onChange }: Props) {
       <input
         type="range"
         min={0}
-        max={150}
+        max={300}
         step={5}
         value={Math.round(volume * 100)}
         onInput={(event) => onChange(Number((event.target as HTMLInputElement).value) / 100)}

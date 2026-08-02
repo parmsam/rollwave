@@ -25,12 +25,27 @@ export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
       ctxRef.current = new Ctor()
       const gain = ctxRef.current.createGain()
       gain.gain.value = volume
-      // Volume can be pushed to 150% to give quiet devices real headroom,
-      // but the warning clap's peak (0.9, see playWarningClap below) is
-      // already close to unity — without a limiter, boosting past 100%
-      // would hard-clip it into an audible crackle. A compressor with
-      // Web Audio's default curve gently limits instead.
+      // Volume can be pushed well past 100% to give quiet devices/phone
+      // speakers real headroom, but the warning clap's peak (0.9, see
+      // playWarningClap below) is already close to unity and the bell's
+      // stacked partials can sum close to it too — without a limiter,
+      // boosting gain would hard-clip those into an audible crackle.
+      // A DynamicsCompressor prevents that, but its *default* curve
+      // (threshold -24dB) is tuned for mixing full songs, not short cues —
+      // the voice clips here average around -22dB, so the default engages
+      // on nearly all of them, quietly shaving down perceived loudness even
+      // at 100%. Worse, that meant cranking the slider higher just fed more
+      // signal into the same squashing zone, so the slider's effect
+      // diminished the harder it was pushed. Pushing the threshold up near
+      // the ceiling with a steep ratio + fast attack makes it act as a true
+      // peak limiter instead — silent on ordinary levels, only engaging
+      // within a couple dB of clipping.
       const compressor = ctxRef.current.createDynamicsCompressor()
+      compressor.threshold.value = -2
+      compressor.knee.value = 0
+      compressor.ratio.value = 20
+      compressor.attack.value = 0.002
+      compressor.release.value = 0.1
       gain.connect(compressor)
       compressor.connect(ctxRef.current.destination)
       masterGainRef.current = gain
