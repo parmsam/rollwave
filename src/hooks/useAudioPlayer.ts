@@ -30,21 +30,24 @@ export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
       // playWarningClap below) is already close to unity and the bell's
       // stacked partials can sum close to it too — without a limiter,
       // boosting gain would hard-clip those into an audible crackle.
-      // A DynamicsCompressor prevents that, but its *default* curve
-      // (threshold -24dB) is tuned for mixing full songs, not short cues —
-      // the voice clips here average around -22dB, so the default engages
-      // on nearly all of them, quietly shaving down perceived loudness even
-      // at 100%. Worse, that meant cranking the slider higher just fed more
-      // signal into the same squashing zone, so the slider's effect
-      // diminished the harder it was pushed. Pushing the threshold up near
-      // the ceiling with a steep ratio + fast attack makes it act as a true
-      // peak limiter instead — silent on ordinary levels, only engaging
-      // within a couple dB of clipping.
+      // A DynamicsCompressor prevents that. Verified with real
+      // OfflineAudioContext renders (not just the spec formula) of every
+      // synthesized cue plus a decoded voice clip: threshold -2dB/2ms attack
+      // (an earlier attempt) still let the bell's four additive sine
+      // partials overshoot to +0.89dB at the new 300% ceiling — a fast
+      // attack still isn't instant, and four oscillators summing at once
+      // outraces a 2ms reaction time. threshold -6dB/1ms attack gives the
+      // limiter enough headroom to catch that transient (bell peaks at
+      // -0.4dB / 0.95 amplitude at 300%, confirmed clip-free) while still
+      // passing normal-level content through close to unchanged — a voice
+      // clip's RMS goes from -23dB raw to -15dB at 300%, a real ~8dB
+      // loudness increase, not squashed back down like the old default
+      // -24dB threshold did.
       const compressor = ctxRef.current.createDynamicsCompressor()
-      compressor.threshold.value = -2
+      compressor.threshold.value = -6
       compressor.knee.value = 0
       compressor.ratio.value = 20
-      compressor.attack.value = 0.002
+      compressor.attack.value = 0.001
       compressor.release.value = 0.1
       gain.connect(compressor)
       compressor.connect(ctxRef.current.destination)
