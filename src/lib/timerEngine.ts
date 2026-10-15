@@ -124,6 +124,13 @@ export function reduceTimer(state: TimerState, action: TimerAction, now: number)
       return state.isPaused || state.phase === 'idle' || state.phase === 'finished'
         ? state
         : catchUp(state, now)
+
+    // A running state's deadlines kept elapsing in real time while it was
+    // away (tab closed, or the few seconds before an Undo), so it resumes
+    // exactly where the wall clock says it should be — possibly several
+    // phases later. A paused state stays frozen where it was.
+    case 'RESTORE':
+      return action.state.isPaused ? action.state : catchUp(action.state, now)
   }
 }
 

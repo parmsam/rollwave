@@ -28,6 +28,8 @@ export function useSettings() {
   const [showClock, setShowClock] = useLocalStorage('rollwave:showClock', false)
   const [voice, setVoice] = useLocalStorage('rollwave:voice', DEFAULT_VOICE)
   const [displayStyle, setDisplayStyle] = useLocalStorage<DisplayStyle>('rollwave:displayStyle', 'ring')
+  // Only has an effect where the Audio Session API exists (iOS/Safari 17+).
+  const [playThroughSilent, setPlayThroughSilent] = useLocalStorage('rollwave:playThroughSilent', true)
 
   const customPresets = storedCustom.v === SCHEMA_VERSION ? storedCustom.presets : []
 
@@ -81,6 +83,8 @@ export function useSettings() {
     setVoice,
     displayStyle,
     setDisplayStyle,
+    playThroughSilent,
+    setPlayThroughSilent,
     addCustomPreset,
     updateCustomPreset,
     deleteCustomPreset,

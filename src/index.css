@@ -104,6 +104,35 @@ body {
   animation: pulse-glow 1s ease-in-out infinite;
 }
 
+/* Paused: a slow fade in and out (like a microwave's paused display), so a
+   paused clock is never mistaken for a running one from across the mat. */
+@keyframes paused-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-paused-blink {
+  animation: paused-blink 1.6s ease-in-out infinite;
+}
+
+/* Respect "reduce motion": the warning state is still unmistakable from its
+   red color, and the paused state from its dimmed digits + "Paused" label. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow {
+    animation: none;
+    filter: drop-shadow(0 0 12px currentColor);
+  }
+  .animate-paused-blink {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

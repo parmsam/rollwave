@@ -1,4 +1,3 @@
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Phase } from '../lib/types'
 
 interface Props {
@@ -10,17 +9,11 @@ interface Props {
 }
 
 const primaryButtonClass =
-  'rounded-full bg-accent px-10 py-4 text-lg font-semibold text-ink shadow-[0_0_30px_-5px_var(--color-accent)] transition active:scale-95 active:bg-accent-2 active:shadow-[0_0_30px_-5px_var(--color-accent-2)]'
+  'rounded-full bg-accent px-8 py-4 sm:px-10 text-lg font-semibold text-ink shadow-[0_0_30px_-5px_var(--color-accent)] transition active:scale-95 active:bg-accent-2 active:shadow-[0_0_30px_-5px_var(--color-accent-2)]'
 const secondaryButtonClass =
-  'rounded-full border border-slate-900/15 px-6 py-4 text-sm font-medium text-slate-900/80 transition hover:border-slate-900/30 active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round dark:border-white/15 dark:text-white/80 dark:hover:border-white/30'
+  'rounded-full border border-slate-900/15 px-5 py-4 text-sm sm:px-6 font-medium text-slate-900/80 transition hover:border-slate-900/30 active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round dark:border-white/15 dark:text-white/80 dark:hover:border-white/30'
 
 export function Controls({ phase, isPaused, onToggleStartPause, onReset, onSkip }: Props) {
-  useKeyboardShortcuts({
-    onToggleStartPause: phase === 'finished' ? onReset : onToggleStartPause,
-    onReset,
-    onSkip,
-  })
-
   if (phase === 'finished') {
     return (
       <button type="button" onClick={onReset} className={primaryButtonClass}>

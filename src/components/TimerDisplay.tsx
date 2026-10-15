@@ -7,6 +7,7 @@ interface Props {
   remainingMs: number
   progressRatio: number
   isWarning: boolean
+  isPaused: boolean
 }
 
 const RADIUS = 130
@@ -14,7 +15,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 const TRACK_STROKE = 6
 const ARC_STROKE = 20
 
-export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, isWarning }: Props) {
+export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, isWarning, isPaused }: Props) {
   const color = phaseColor(phase, isWarning)
   const clampedProgress = Math.min(Math.max(progressRatio, 0), 1)
   // Starts as a full, bold arc and drains away as time elapses (0 = full
@@ -47,10 +48,10 @@ export function TimerDisplay({ phase, currentRound, remainingMs, progressRatio, 
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
         <span className="text-xs font-semibold tracking-[0.3em] text-slate-900/50 uppercase lg:text-sm dark:text-white/50">
-          {phaseLabel(phase)}
+          {isPaused ? 'Paused' : phaseLabel(phase)}
           {phase === 'round' || phase === 'rest' ? ` · ${currentRound}` : ''}
         </span>
-        <span className="font-mono text-6xl font-bold tabular-nums sm:text-7xl lg:text-8xl" style={{ color }}>
+        <span className={`font-mono text-6xl font-bold tabular-nums sm:text-7xl lg:text-8xl ${isPaused ? 'animate-paused-blink' : ''}`} style={{ color }}>
           {formatTime(remainingMs)}
         </span>
       </div>

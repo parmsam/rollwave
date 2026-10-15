@@ -6,13 +6,14 @@ interface Props {
   sessions: SessionRecord[]
   onClose: () => void
   onClear: () => void
+  onDelete: (id: string) => void
 }
 
 function formatSessionDate(epochMs: number): string {
   return new Date(epochMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export function StatsView({ stats, sessions, onClose, onClear }: Props) {
+export function StatsView({ stats, sessions, onClose, onClear, onDelete }: Props) {
   return (
     <div className="flex w-full max-w-sm flex-1 flex-col gap-6 py-2">
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -29,7 +30,7 @@ export function StatsView({ stats, sessions, onClose, onClear }: Props) {
         ) : (
           <ul className="divide-y divide-slate-900/10 dark:divide-white/10">
             {sessions.map((session) => (
-              <li key={session.id} className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+              <li key={session.id} className="flex items-center justify-between gap-2 py-1.5 pr-1.5 pl-4 text-sm">
                 <span className="truncate text-slate-900/80 dark:text-white/80">{session.presetLabel}</span>
                 <span className="shrink-0 text-slate-900/50 dark:text-white/50">
                   {session.roundsCompleted}
@@ -38,6 +39,14 @@ export function StatsView({ stats, sessions, onClose, onClear }: Props) {
                 <span className="shrink-0 text-slate-900/40 dark:text-white/40">
                   {formatSessionDate(session.completedAt)}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => onDelete(session.id)}
+                  aria-label={`Delete ${session.presetLabel} session from ${formatSessionDate(session.completedAt)}`}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs text-slate-900/30 transition active:bg-warn/20 active:text-warn dark:text-white/30"
+                >
+                  ✕
+                </button>
               </li>
             ))}
           </ul>

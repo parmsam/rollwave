@@ -28,9 +28,25 @@ export function useHistory() {
     [setStored],
   )
 
+  const removeSession = useCallback(
+    (id: string) => {
+      setStored((prev) => ({
+        v: SCHEMA_VERSION,
+        sessions: (prev.v === SCHEMA_VERSION ? prev.sessions : []).filter((session) => session.id !== id),
+      }))
+    },
+    [setStored],
+  )
+
   const clearHistory = useCallback(() => setStored({ v: SCHEMA_VERSION, sessions: [] }), [setStored])
+
+  /** Puts back a snapshot taken before a delete/clear (Undo). */
+  const replaceHistory = useCallback(
+    (snapshot: SessionRecord[]) => setStored({ v: SCHEMA_VERSION, sessions: snapshot }),
+    [setStored],
+  )
 
   const stats = useMemo(() => computeStats(sessions), [sessions])
 
-  return { sessions, addSession, clearHistory, stats }
+  return { sessions, addSession, removeSession, clearHistory, replaceHistory, stats }
 }

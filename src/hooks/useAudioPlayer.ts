@@ -3,6 +3,29 @@ import { AUDIO_CLIPS, clipUrl } from '../lib/audioClips'
 
 type AudioContextCtor = typeof AudioContext
 
+/**
+ * Audio Session API (Safari 17+ / iOS 17+). Web Audio defaults to iOS's
+ * "ambient" session category, which the ring/silent switch mutes outright;
+ * a "playback" session isn't muted by it — the same category a native timer
+ * app uses. Absent everywhere else, so every call is feature-detected.
+ */
+type AudioSession = { type: string }
+function audioSession(): AudioSession | undefined {
+  return (navigator as Navigator & { audioSession?: AudioSession }).audioSession
+}
+export const canPlayThroughSilentMode = (): boolean => typeof navigator !== 'undefined' && Boolean(audioSession())
+
+/** Switch the page's audio session category; `false` hands control back to the browser default. */
+export function setPlaybackSession(on: boolean): void {
+  const session = audioSession()
+  if (!session) return
+  try {
+    session.type = on ? 'playback' : 'auto'
+  } catch {
+    // value unsupported in this browser version — stays on the default category
+  }
+}
+
 /** Web Audio buffer cache + playback. Lower latency and safe overlap vs plain <audio> elements. */
 export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
   const ctxRef = useRef<AudioContext | null>(null)
@@ -247,6 +270,24 @@ export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
     playClap(now)
     playClap(now + 0.14)
   }, [muted])
+
+  // iOS Safari "interrupts" the AudioContext (phone call, Siri, switching
+  // apps) and leaves it suspended afterwards; any later tap or key press is a
+  // valid gesture to bring it back, so the next cue isn't silently lost.
+  useEffect(() => {
+    function onGesture() {
+      const ctx = ctxRef.current
+      if (ctx && ctx.state !== 'running') void ctx.resume()
+    }
+    for (const type of ['pointerdown', 'keydown']) {
+      document.addEventListener(type, onGesture, { capture: true, passive: true })
+    }
+    return () => {
+      for (const type of ['pointerdown', 'keydown']) {
+        document.removeEventListener(type, onGesture, { capture: true })
+      }
+    }
+  }, [])
 
   useEffect(() => {
     return () => {

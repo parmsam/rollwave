@@ -7,16 +7,17 @@ function isMobileDevice(): boolean {
 }
 
 /**
- * There's no reliable way to detect the iOS ring/silent switch (or Android
- * media volume) from the page, and attempts to force audio through it
- * (looping a silent <audio>/<video> element) aren't dependable either — see
- * CLAUDE.md's Audio section. So instead of guessing, just tell mobile users
- * up front.
+ * There's no way to detect the iOS ring/silent switch (or Android media
+ * volume) from the page. On iOS/Safari 17+ the Audio Session API sidesteps
+ * the switch (see `setPlaybackSession` in useAudioPlayer.ts); everywhere
+ * else, just tell mobile users up front.
  */
-export function SilentModeNotice() {
+export function SilentModeNotice({ handledBySession }: { handledBySession: boolean }) {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === '1')
 
-  if (dismissed || !isMobileDevice()) return null
+  // Where the Audio Session API lets cues play through the switch (and the
+  // user hasn't turned that off), the warning would just be wrong.
+  if (dismissed || handledBySession || !isMobileDevice()) return null
 
   function dismiss() {
     setDismissed(true)

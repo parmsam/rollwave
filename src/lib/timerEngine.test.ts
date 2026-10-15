@@ -188,6 +188,41 @@ describe('reduceTimer', () => {
   })
 })
 
+describe('RESTORE', () => {
+  it('catches a running state up through every phase that elapsed while it was away', () => {
+    // getReady 3s, round 10s, rest 5s: 20s after start lands 2s into rest 1.
+    const started = reduceTimer(createInitialState(baseConfig), { type: 'START' }, T0)
+    const restored = reduceTimer(createInitialState(baseConfig), { type: 'RESTORE', state: started }, T0 + 16_000)
+    expect(restored.phase).toBe('rest')
+    expect(restored.currentRound).toBe(1)
+    expect(remainingMs(restored, T0 + 16_000)).toBe(2_000)
+  })
+
+  it('reaches finished if the whole session elapsed while away', () => {
+    const started = reduceTimer(createInitialState(baseConfig), { type: 'START' }, T0)
+    const restored = reduceTimer(createInitialState(baseConfig), { type: 'RESTORE', state: started }, T0 + 3_600_000)
+    expect(restored.phase).toBe('finished')
+    expect(restored.currentRound).toBe(3)
+  })
+
+  it('keeps a paused state frozen no matter how much time passed', () => {
+    let state = reduceTimer(createInitialState(baseConfig), { type: 'START' }, T0)
+    state = reduceTimer(state, { type: 'TICK' }, T0 + 5_000) // 2s into round 1
+    const paused = reduceTimer(state, { type: 'PAUSE' }, T0 + 5_000)
+    const restored = reduceTimer(createInitialState(baseConfig), { type: 'RESTORE', state: paused }, T0 + 3_600_000)
+    expect(restored).toBe(paused)
+    expect(remainingMs(restored, T0 + 3_600_000)).toBe(8_000)
+  })
+
+  it('restores regardless of the current phase (undoing a Reset lands on idle first)', () => {
+    const started = reduceTimer(createInitialState(baseConfig), { type: 'START' }, T0)
+    const reset = reduceTimer(started, { type: 'RESET' }, T0 + 1_000)
+    const undone = reduceTimer(reset, { type: 'RESTORE', state: started }, T0 + 4_000)
+    expect(undone.phase).toBe('round')
+    expect(remainingMs(undone, T0 + 4_000)).toBe(9_000)
+  })
+})
+
 describe('completedRoundsForPartialReset', () => {
   it('credits nothing while idle or getting ready', () => {
     expect(completedRoundsForPartialReset('idle', 0)).toBe(0)

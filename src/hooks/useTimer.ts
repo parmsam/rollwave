@@ -6,17 +6,41 @@ import {
   resolveWarningClipId,
 } from '../lib/audioClips'
 import { createInitialState, isWarningWindow, progressRatio, reduceTimer, remainingMs } from '../lib/timerEngine'
-import type { TimerAction, TimerConfig } from '../lib/types'
-import { useAudioPlayer } from './useAudioPlayer'
+import type { TimerAction, TimerConfig, TimerState } from '../lib/types'
+import { setPlaybackSession, useAudioPlayer } from './useAudioPlayer'
 import { useVibration } from './useVibration'
 import { useWakeLock } from './useWakeLock'
 
 const TICK_INTERVAL_MS = 250
 const ROUND_START_VOICE_DELAY_MS = 200
+// Long enough for the round-end bell's ~3.2s decay to ring out before the
+// audio session is handed back to the default (silent-switch-muted) category.
+const BELL_TAIL_MS = 4000
 
-export function useTimer(config: TimerConfig, voice: string, muted: boolean, volume: number) {
-  const [state, setState] = useState(() => createInitialState(config))
+interface AudioOptions {
+  voice: string
+  muted: boolean
+  volume: number
+  /** Hold an iOS "playback" audio session while a session runs, so the silent switch doesn't mute cues. */
+  playThroughSilent: boolean
+}
+
+const isRunningPhase = (phase: TimerState['phase']) => phase !== 'idle' && phase !== 'finished'
+
+/**
+ * `initialState` is a session saved before a reload; it's caught up to the
+ * wall clock (possibly through several phases) rather than restarted.
+ */
+export function useTimer(config: TimerConfig, audio: AudioOptions, initialState?: TimerState | null) {
+  const { voice, muted, volume, playThroughSilent } = audio
+  const [state, setState] = useState(() =>
+    initialState ? reduceTimer(initialState, { type: 'RESTORE', state: initialState }, Date.now()) : createInitialState(config),
+  )
   const [clockTick, setClockTick] = useState(0)
+  // A restored session's AudioContext doesn't exist yet, and browsers only
+  // allow creating/resuming one inside a user gesture — so cues stay silent
+  // until the next tap or key press anywhere on the page.
+  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(() => isRunningPhase(state.phase))
 
   const prevPhaseRef = useRef(state.phase)
   const prevRoundRef = useRef(state.currentRound)
@@ -28,14 +52,57 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean, vol
   const vibrate = useVibration()
   const pendingRoundVoiceRef = useRef<number | null>(null)
 
+  useEffect(() => {
+    if (!needsAudioUnlock) return
+    function onGesture() {
+      unlock()
+      setNeedsAudioUnlock(false)
+    }
+    for (const type of ['pointerdown', 'keydown']) {
+      document.addEventListener(type, onGesture, { capture: true, once: true })
+    }
+    return () => {
+      for (const type of ['pointerdown', 'keydown']) {
+        document.removeEventListener(type, onGesture, { capture: true })
+      }
+    }
+  }, [needsAudioUnlock, unlock])
+
+  // A session restored mid-round needs its screen kept awake too (no
+  // gesture needed for that, unlike audio).
+  useEffect(() => {
+    if (isRunningPhase(state.phase)) void wakeLock.acquire()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Hold an iOS "playback" audio session for the whole session (not per cue —
+  // cues are seconds apart, and a category switch racing the first sound of
+  // each cue could still let it be muted), then hand it back once the
+  // session ends so it stops claiming the device's audio. Declared before the
+  // cue effects below so the category is switched before their first sound.
+  useEffect(() => {
+    if (playThroughSilent && isRunningPhase(state.phase)) {
+      setPlaybackSession(true)
+      return
+    }
+    if (playThroughSilent && state.phase === 'finished') {
+      const id = window.setTimeout(() => setPlaybackSession(false), BELL_TAIL_MS)
+      return () => window.clearTimeout(id)
+    }
+    setPlaybackSession(false)
+  }, [state.phase, playThroughSilent])
+
   const dispatch = useCallback((action: TimerAction) => {
     setState((prev) => reduceTimer(prev, action, Date.now()))
   }, [])
 
   // Keep config in sync with the selected preset/custom settings while idle.
+  // Also re-runs on returning to idle: a restored session carries its own
+  // saved config, which shouldn't outlive the session it belonged to.
+  const isIdle = state.phase === 'idle'
   useEffect(() => {
     dispatch({ type: 'CONFIGURE', config })
-  }, [config, dispatch])
+  }, [config, dispatch, isIdle])
 
   // Drift-free rAF loop: dispatches TICK (cheap no-op unless a deadline has
   // passed) and forces a render ~4x/sec so the on-screen countdown moves.
@@ -163,10 +230,23 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean, vol
   }, [state, playClip, playWarningClap, vibrate, clockTick])
 
   const start = useCallback(() => {
+    if (playThroughSilent) setPlaybackSession(true)
     unlock()
     void wakeLock.acquire()
     dispatch({ type: 'START' })
-  }, [dispatch, unlock, wakeLock])
+  }, [dispatch, unlock, wakeLock, playThroughSilent])
+
+  /** Reinstate a saved state (Undo after Reset) — must be called from a user gesture, like `start`. */
+  const restore = useCallback(
+    (saved: TimerState) => {
+      if (playThroughSilent) setPlaybackSession(true)
+      unlock()
+      setNeedsAudioUnlock(false)
+      void wakeLock.acquire()
+      dispatch({ type: 'RESTORE', state: saved })
+    },
+    [dispatch, unlock, wakeLock, playThroughSilent],
+  )
 
   const pause = useCallback(() => dispatch({ type: 'PAUSE' }), [dispatch])
   const resume = useCallback(() => dispatch({ type: 'RESUME' }), [dispatch])
@@ -189,6 +269,7 @@ export function useTimer(config: TimerConfig, voice: string, muted: boolean, vol
     remainingMs: remainingMs(state, now),
     progressRatio: progressRatio(state, now),
     isWarning: isWarningWindow(state, now),
-    actions: { start, pause, resume, reset, skip, toggleStartPause },
+    needsAudioUnlock: needsAudioUnlock && !muted,
+    actions: { start, pause, resume, reset, skip, toggleStartPause, restore },
   }
 }

@@ -35,3 +35,5 @@ export type TimerAction =
   | { type: 'SKIP' }
   | { type: 'RESET' }
   | { type: 'TICK' }
+  /** Reinstates a previously-saved state (page reload, or undoing a Reset), caught up to `now`. */
+  | { type: 'RESTORE'; state: TimerState }
