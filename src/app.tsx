@@ -15,8 +15,10 @@ import { SilentModeNotice } from './components/SilentModeNotice'
 import { StatsView } from './components/StatsView'
 import { TimerDisplay } from './components/TimerDisplay'
 import { Toast, type ToastMessage } from './components/Toast'
+import { UpdateBanner } from './components/UpdateBanner'
 import { VolumeToggle } from './components/VolumeToggle'
 import { canPlayThroughSilentMode } from './hooks/useAudioPlayer'
+import { useAppUpdate } from './hooks/useAppUpdate'
 import { useDocumentStatus } from './hooks/useDocumentStatus'
 import { useFullscreen } from './hooks/useFullscreen'
 import { useHistory } from './hooks/useHistory'
@@ -68,6 +70,7 @@ export function App() {
   const fullscreen = useFullscreen()
   const theme = useTheme()
   useDocumentStatus(state, remainingMs, progressRatio, isWarning)
+  const appUpdate = useAppUpdate()
 
   const [view, setView] = useState<'setup' | 'history'>('setup')
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -255,6 +258,7 @@ export function App() {
         />
       ) : isSetup ? (
         <div className="flex w-full flex-1 flex-col items-center gap-8">
+          {appUpdate.updateAvailable && <UpdateBanner onReload={appUpdate.reload} />}
           <SilentModeNotice handledBySession={playThroughSilent && canPlayThroughSilentMode()} />
           <InstallPrompt />
           <PresetPicker

@@ -126,13 +126,19 @@ export function SettingsPanel(props: Props) {
           </Row>
         )}
       </div>
-      <button
-        type="button"
-        onClick={props.onShowShortcuts}
-        className="mt-3 hidden rounded-lg px-1 py-1 text-xs text-slate-900/45 underline transition active:bg-accent/20 active:text-round pointer-fine:inline-block dark:text-white/45"
-      >
-        Keyboard shortcuts (?)
-      </button>
+      <div className="mt-3 flex items-center justify-between gap-3 px-1 text-xs text-slate-900/45 dark:text-white/45">
+        <button
+          type="button"
+          onClick={props.onShowShortcuts}
+          className="hidden rounded-lg py-1 underline transition active:bg-accent/20 active:text-round pointer-fine:inline-block"
+        >
+          Keyboard shortcuts (?)
+        </button>
+        <span className="ml-auto tabular-nums" title={__APP_COMMIT__ ? `Build ${__APP_COMMIT__}` : undefined}>
+          ROLLWAVE v{__APP_VERSION__}
+          {__APP_COMMIT__ && <span className="text-slate-900/30 dark:text-white/30"> · {__APP_COMMIT__}</span>}
+        </span>
+      </div>
     </section>
   )
 }

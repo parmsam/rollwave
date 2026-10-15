@@ -12,7 +12,7 @@ A futuristic BJJ round timer PWA. Preact + TypeScript + Vite + Tailwind CSS v4, 
 
 - **Preact**, not React — ~3KB runtime, keeps the PWA fast to boot on mobile. Same hooks API (`preact/hooks`).
 - **Tailwind v4** via `@tailwindcss/vite` — no `tailwind.config.js`; theme tokens (colors, etc.) live in the `@theme` block in `src/index.css`. Custom theme colors (`--color-accent`, `--color-rest`, `--color-warn`, ...) automatically become utilities (`bg-accent`, `text-warn`, etc.).
-- **vite-plugin-pwa** (`workbox` / `generateSW` mode) — manifest + service worker generated at build time from config in `vite.config.ts`.
+- **vite-plugin-pwa** (`workbox` / `generateSW` mode) — manifest + service worker generated at build time from config in `vite.config.ts`. `registerType: 'prompt'` (not `autoUpdate`): see "Versioning & app updates" below.
 - **Vitest** for unit tests, `jsdom` environment (configured inline in `vite.config.ts`'s `test` block, via `defineConfig` imported from `vitest/config` — not plain `vite`, or the `test` key won't typecheck).
 
 ## Architecture
@@ -98,6 +98,12 @@ npm run generate:icons
 - Any hardcoded root-relative asset path in a component (e.g. an `<img src="/icons/...">`) will 404 under a base path — always prefix with `import.meta.env.BASE_URL` (see `app.tsx`'s header logo, or `clipUrl()` in `audioClips.ts`). `index.html`'s own `<link>`/`<script>` tags are auto-rewritten by Vite; JS string literals are not.
 - `.github/workflows/deploy.yml` builds on every push to `main` and deploys via `actions/upload-pages-artifact` + `actions/deploy-pages` — no secrets required (audio is pre-baked, not generated in CI).
 - One manual one-time setting: repo **Settings → Pages → Build and deployment → Source = "GitHub Actions"**.
+
+## Versioning & app updates
+
+- **Version number**: `package.json`'s `version` is the app version, matching the `vX.Y.Z` git tags. `vite.config.ts` injects it as `__APP_VERSION__` plus `__APP_COMMIT__` (short SHA from `GITHUB_SHA` in CI, `git rev-parse` locally; declared in `src/env.d.ts`), shown at the bottom of the Settings card. Bump `version` when tagging a release.
+- **Updates wait for the user**: with `registerType: 'prompt'`, a new deploy downloads in the background and then waits. `hooks/useAppUpdate.ts` (wrapping `useRegisterSW` from `virtual:pwa-register/preact`) exposes `updateAvailable`, and `UpdateBanner` shows a Reload button **only while an update is waiting, and only on the setup screen** — never mid-session, so a new version can't swap out under a running round. Since an installed PWA can stay open for days without a navigation, the hook also calls `registration.update()` hourly and on every return to the foreground.
+- **⚠️ First-visit Reload edge case**: generateSW in prompt mode doesn't claim clients, so on a user's *first* visit the page is never controlled by a worker. If an update lands during that visit, the library's `updateServiceWorker()` sends SKIP_WAITING and waits for a `controlling` event that never fires, so the button silently did nothing. `reload()` therefore reloads the page directly when there was no controller (an uncontrolled page loads straight from the network, which already has the new version). Verified with Playwright for both a first visit and a returning (controlled) visit by building twice with different `GITHUB_SHA` values and serving `dist/` with a plain static server. `vite preview` caches its file list at startup, so it 404s the new hashed files after a rebuild.
 
 ## Commands
 
