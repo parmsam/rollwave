@@ -14,7 +14,14 @@ const DURATION_MS = 7000
  * anything that throws away data (ending a session early, deleting history),
  * so those stay one tap instead of hiding behind a confirm dialog.
  */
-export function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: () => void }) {
+interface Props {
+  toast: ToastMessage | null
+  onDismiss: () => void
+  /** Sit above the setup screen's pinned Start bar instead of covering it. */
+  raised?: boolean
+}
+
+export function Toast({ toast, onDismiss, raised = false }: Props) {
   useEffect(() => {
     if (!toast) return
     const id = window.setTimeout(onDismiss, DURATION_MS)
@@ -26,7 +33,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDism
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-4 z-20 mx-auto flex max-w-sm items-center justify-between gap-3 rounded-2xl border border-slate-900/10 bg-panel/95 px-4 py-3 text-sm text-slate-900/80 shadow-lg backdrop-blur-sm dark:border-white/10 dark:text-white/80"
+      className={`fixed inset-x-4 z-20 ${raised ? 'bottom-36' : 'bottom-4'} mx-auto flex max-w-sm items-center justify-between gap-3 rounded-2xl border border-slate-900/10 bg-panel/95 px-4 py-3 text-sm text-slate-900/80 shadow-lg backdrop-blur-sm dark:border-white/10 dark:text-white/80`}
     >
       <span>{toast.message}</span>
       <div className="flex shrink-0 items-center gap-2">

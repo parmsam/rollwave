@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'preact/hooks'
-import { AUDIO_CLIPS, clipUrl } from '../lib/audioClips'
+import { AUDIO_CLIPS, clipUrl, resolveRoundClipId } from '../lib/audioClips'
 
 type AudioContextCtor = typeof AudioContext
 
@@ -207,8 +207,10 @@ export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
   // Short, bright single-note ding for "round about to start" — deliberately
   // the opposite character of the deep, slow round-end bell (high pitch,
   // quick decay) so the two are unmistakable by ear alone.
-  const playStartChime = useCallback(() => {
-    if (muted) return
+  // `force` is for explicit "let me hear it" previews in settings, which
+  // play even when muted — silence there would read as broken.
+  const playStartChime = useCallback((force = false) => {
+    if (muted && !force) return
     const ctx = ctxRef.current
     if (!ctx) return
     const now = ctx.currentTime
@@ -295,5 +297,37 @@ export function useAudioPlayer(voice: string, muted: boolean, volume: number) {
     }
   }, [])
 
-  return { unlock, playClip, playBell, playStartChime, playWarningClap }
+  /**
+   * Plays a sample ("Round 1") in any voice — not just the current one, since
+   * this fires in the same click that changes the voice setting, before the
+   * hook re-renders with the new `voice`. Must be called from a user gesture.
+   */
+  const previewVoice = useCallback(
+    async (previewVoiceId: string) => {
+      const ctx = ensureContext()
+      if (!ctx) return
+      const id = resolveRoundClipId(1)
+      const key = `${previewVoiceId}:${id}`
+      let buffer = buffersRef.current.get(key)
+      if (!buffer) {
+        try {
+          const res = await fetch(clipUrl(id, previewVoiceId))
+          if (!res.ok) return
+          buffer = await ctx.decodeAudioData(await res.arrayBuffer())
+          buffersRef.current.set(key, buffer)
+        } catch {
+          return
+        }
+      }
+      playBuffer(ctx, buffer)
+    },
+    [ensureContext, playBuffer],
+  )
+
+  /** A short test sound at the current volume, for the volume slider. Must be called from a user gesture. */
+  const previewVolume = useCallback(() => {
+    if (ensureContext()) playStartChime(true)
+  }, [ensureContext, playStartChime])
+
+  return { unlock, playClip, playBell, playStartChime, playWarningClap, previewVoice, previewVolume }
 }

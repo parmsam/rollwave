@@ -37,13 +37,13 @@ export function useSettings() {
   const activeConfig: TimerConfig = allPresets.find((preset) => preset.id === selectedPresetId) ?? PRESETS[0]
 
   const addCustomPreset = useCallback(() => {
-    const preset = createCustomPreset(customPresets.length + 1)
+    const preset = createCustomPreset(customPresets.length + 1, activeConfig)
     setStoredCustom((prev) => ({
       v: SCHEMA_VERSION,
       presets: [...(prev.v === SCHEMA_VERSION ? prev.presets : []), preset],
     }))
     setSelectedPresetId(preset.id)
-  }, [customPresets.length, setStoredCustom, setSelectedPresetId])
+  }, [customPresets.length, activeConfig, setStoredCustom, setSelectedPresetId])
 
   const updateCustomPreset = useCallback(
     (id: string, patch: Partial<TimerConfig>) => {

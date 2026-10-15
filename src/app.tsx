@@ -2,21 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { AriaLiveRegion } from './components/AriaLiveRegion'
 import { BigDigitsDisplay } from './components/BigDigitsDisplay'
 import { Controls } from './components/Controls'
-import { DisplayStyleToggle } from './components/DisplayStyleToggle'
 import { FullscreenToggle } from './components/FullscreenToggle'
 import { GitHubLink } from './components/GitHubLink'
+import { HistoryIcon, TimerIcon } from './components/icons'
 import { InstallPrompt } from './components/InstallPrompt'
 import { LiveClock } from './components/LiveClock'
 import { PhaseIndicator } from './components/PhaseIndicator'
 import { PresetPicker } from './components/PresetPicker'
+import { SettingsPanel } from './components/SettingsPanel'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { SilentModeNotice } from './components/SilentModeNotice'
 import { StatsView } from './components/StatsView'
-import { ThemeToggle } from './components/ThemeToggle'
 import { TimerDisplay } from './components/TimerDisplay'
 import { Toast, type ToastMessage } from './components/Toast'
-import { VoicePicker } from './components/VoicePicker'
-import { VolumeSlider } from './components/VolumeSlider'
 import { VolumeToggle } from './components/VolumeToggle'
 import { canPlayThroughSilentMode } from './hooks/useAudioPlayer'
 import { useDocumentStatus } from './hooks/useDocumentStatus'
@@ -28,7 +26,7 @@ import { useTheme } from './hooks/useTheme'
 import { useTimer } from './hooks/useTimer'
 import { loadActiveSession, saveActiveSession } from './lib/activeSession'
 import { completedRoundsForPartialReset } from './lib/timerEngine'
-import { phaseLabel } from './lib/format'
+import { describePreset, formatSessionTotal, phaseLabel } from './lib/format'
 import type { SessionRecord } from './lib/history'
 import type { TimerState } from './lib/types'
 
@@ -61,7 +59,7 @@ export function App() {
   } = useSettings()
   // Read once: a session that was running when the page was last closed/reloaded.
   const [restored] = useState(loadActiveSession)
-  const { state, remainingMs, progressRatio, isWarning, needsAudioUnlock, actions } = useTimer(
+  const { state, remainingMs, progressRatio, isWarning, needsAudioUnlock, preview, actions } = useTimer(
     activeConfig,
     { voice, muted, volume, playThroughSilent },
     restored?.timer,
@@ -234,13 +232,15 @@ export function App() {
               type="button"
               onClick={() => setView((v) => (v === 'history' ? 'setup' : 'history'))}
               aria-label={view === 'history' ? 'Back to timer setup' : 'View training history'}
+              title={view === 'history' ? 'Back to timer' : 'Training history'}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-900/15 text-lg text-slate-900/70 transition hover:text-slate-900 active:scale-95 active:border-accent/60 active:bg-accent/20 active:text-round dark:border-white/15 dark:text-white/70 dark:hover:text-white"
             >
-              {view === 'history' ? '⏱️' : '📊'}
+              {view === 'history' ? <TimerIcon /> : <HistoryIcon />}
             </button>
           )}
           {fullscreen.supported && <FullscreenToggle isFullscreen={fullscreen.isFullscreen} onToggle={fullscreen.toggle} />}
-          <GitHubLink />
+          {/* Running view stays distraction-free: nothing there that navigates away. */}
+          {isSetup && <GitHubLink />}
           <VolumeToggle muted={muted} onToggle={() => setMuted((prev) => !prev)} />
         </div>
       </header>
@@ -254,8 +254,9 @@ export function App() {
           onDelete={handleDeleteSession}
         />
       ) : isSetup ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-8">
+        <div className="flex w-full flex-1 flex-col items-center gap-8">
           <SilentModeNotice handledBySession={playThroughSilent && canPlayThroughSilentMode()} />
+          <InstallPrompt />
           <PresetPicker
             selectedPresetId={selectedPresetId}
             customPresets={customPresets}
@@ -264,48 +265,41 @@ export function App() {
             onUpdateCustom={updateCustomPreset}
             onDeleteCustom={deleteCustomPreset}
           />
-          <Controls
-            phase={state.phase}
-            isPaused={state.isPaused}
-            onToggleStartPause={actions.toggleStartPause}
-            onReset={handleReset}
-            onSkip={actions.skip}
+          <SettingsPanel
+            displayStyle={displayStyle}
+            onDisplayStyle={setDisplayStyle}
+            voice={voice}
+            onVoice={setVoice}
+            onPreviewVoice={preview.voice}
+            volume={volume}
+            onVolume={setVolume}
+            onPreviewVolume={preview.volume}
+            theme={theme.preference}
+            onTheme={theme.setPreference}
+            showClock={showClock}
+            onShowClock={setShowClock}
+            playThroughSilent={canPlayThroughSilentMode() ? playThroughSilent : null}
+            onPlayThroughSilent={setPlayThroughSilent}
+            onShowShortcuts={() => setShowShortcuts(true)}
           />
-          <div className="flex flex-col items-center gap-3">
-            <label className="flex items-center gap-2 text-xs text-slate-900/40 dark:text-white/40">
-              <input
-                type="checkbox"
-                checked={showClock}
-                onChange={(event) => setShowClock((event.target as HTMLInputElement).checked)}
-                className="h-3.5 w-3.5 accent-accent"
-              />
-              Show live clock
-            </label>
-            {canPlayThroughSilentMode() && (
-              <label
-                className="flex items-center gap-2 text-xs text-slate-900/40 dark:text-white/40"
-                title="Cues play even with the ring/silent switch on. While a session runs, this may pause other audio playing on this device."
-              >
-                <input
-                  type="checkbox"
-                  checked={playThroughSilent}
-                  onChange={(event) => setPlayThroughSilent((event.target as HTMLInputElement).checked)}
-                  className="h-3.5 w-3.5 accent-accent"
-                />
-                Play cues through silent mode
-              </label>
-            )}
-            <ThemeToggle preference={theme.preference} onChange={theme.setPreference} />
-            <VoicePicker voice={voice} onChange={setVoice} />
-            <VolumeSlider volume={volume} onChange={setVolume} />
-            <DisplayStyleToggle style={displayStyle} onChange={setDisplayStyle} />
-            <button
-              type="button"
-              onClick={() => setShowShortcuts(true)}
-              className="hidden rounded-lg px-2 py-1 text-xs text-slate-900/40 underline transition active:bg-accent/20 active:text-round pointer-fine:inline-block dark:text-white/40"
-            >
-              Keyboard shortcuts (?)
-            </button>
+          {/* Start stays pinned to the bottom of the screen, with a summary of
+              what's about to run — editing a custom mode used to push it off
+              the bottom of a phone screen. */}
+          <div className="sticky bottom-0 z-10 -mx-6 -mb-10 mt-auto flex w-[calc(100%+3rem)] flex-col items-center gap-2 bg-linear-to-t from-page from-75% to-transparent px-6 pt-12 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <p className="max-w-full truncate text-xs text-slate-900/55 dark:text-white/55">
+              <span className="font-semibold text-slate-900/80 dark:text-white/80">{activeConfig.label}</span>
+              {' · '}
+              {describePreset(activeConfig)}
+              {' · '}
+              {formatSessionTotal(activeConfig)}
+            </p>
+            <Controls
+              phase={state.phase}
+              isPaused={state.isPaused}
+              onToggleStartPause={actions.toggleStartPause}
+              onReset={handleReset}
+              onSkip={actions.skip}
+            />
           </div>
         </div>
       ) : (
@@ -350,12 +344,7 @@ export function App() {
               🔈 Session restored — tap to turn sound back on
             </button>
           )}
-          <PhaseIndicator
-            currentRound={state.currentRound}
-            totalRounds={state.config.rounds}
-            phase={state.phase}
-            unlimited={Boolean(state.config.unlimited)}
-          />
+          <PhaseIndicator currentRound={state.currentRound} phase={state.phase} config={state.config} />
           <Controls
             phase={state.phase}
             isPaused={state.isPaused}
@@ -366,8 +355,7 @@ export function App() {
         </div>
       )}
 
-      <InstallPrompt />
-      <Toast toast={toast} onDismiss={dismissToast} />
+      <Toast toast={toast} onDismiss={dismissToast} raised={isSetup && view === 'setup'} />
       {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
     </div>
   )

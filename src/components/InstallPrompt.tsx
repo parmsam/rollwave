@@ -55,7 +55,9 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-slate-900/10 bg-panel/95 px-4 py-3 text-sm text-slate-900/80 shadow-lg backdrop-blur-sm sm:inset-x-auto sm:right-4 sm:w-80 dark:border-white/10 dark:text-white/80">
+    // Inline on the setup screen (not a floating banner) so it can never
+    // cover the pinned Start bar, and never shows during a session.
+    <div className="flex w-full max-w-sm items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-xs text-slate-900/80 dark:text-white/80">
       <span>
         {showIosHint
           ? 'Install ROLLWAVE: tap Share, then "Add to Home Screen".'

@@ -76,7 +76,14 @@ body,
 
 body {
   margin: 0;
-  background: radial-gradient(circle at 50% -10%, var(--color-page-highlight) 0%, var(--color-page) 55%);
+  /* The gradient is sized to the viewport (body is height: 100%), so it must
+     not repeat — on a page taller than the screen it would tile and leave a
+     visible seam. Past the first screen, the solid page color takes over;
+     `fixed` keeps the glow behind the header where supported. */
+  background-color: var(--color-page);
+  background-image: radial-gradient(circle at 50% -10%, var(--color-page-highlight) 0%, var(--color-page) 55%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--color-round);
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;

@@ -47,7 +47,11 @@ export function useTimer(config: TimerConfig, audio: AudioOptions, initialState?
   const announcedWarningRef = useRef(false)
   const announcedTickRef = useRef<number | null>(null)
 
-  const { unlock, playClip, playBell, playStartChime, playWarningClap } = useAudioPlayer(voice, muted, volume)
+  const { unlock, playClip, playBell, playStartChime, playWarningClap, previewVoice, previewVolume } = useAudioPlayer(
+    voice,
+    muted,
+    volume,
+  )
   const wakeLock = useWakeLock()
   const vibrate = useVibration()
   const pendingRoundVoiceRef = useRef<number | null>(null)
@@ -270,6 +274,7 @@ export function useTimer(config: TimerConfig, audio: AudioOptions, initialState?
     progressRatio: progressRatio(state, now),
     isWarning: isWarningWindow(state, now),
     needsAudioUnlock: needsAudioUnlock && !muted,
+    preview: { voice: previewVoice, volume: previewVolume },
     actions: { start, pause, resume, reset, skip, toggleStartPause, restore },
   }
 }
